@@ -2,15 +2,17 @@
 
 import datetime
 import os
+import random
 import typing
 
 import discord
 import discord.app_commands
+import discord.ext.tasks
 import dotenv
 import requests
 
 
-__VERSION__ = 2, 1, 0
+__VERSION__ = 2, 2, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -25,12 +27,14 @@ QUESTION_TEXT = "Welche Tage (vrmtl. ab 15:00 / 16:00 / 17:00) nächste Woche (K
 WEEKDAY_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
 EMOJI_NAME = "Schafkopf_Nein_danke"
 EMOJI_ALT = "🤬"
+GAMES = ["UNO", "Mischwald", "Die Crew", "Azul", "Poker", "Carcassonne", "Trio", "Machi Koro",
+         "Nimalia", "Die Siedler von Catan", "Heimliche Herrschaft", "Next Station: Paris",
+         "Challengers", "Next Station: Tokyo", "Next Station: London"]
 
 # bot setup
-activity: discord.Game = discord.Game(name="Brettspiele")
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
-bot: discord.Client = discord.Client(intents=intents, activity=activity)
+bot: discord.Client = discord.Client(intents=intents)
 tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot)
 
@@ -72,6 +76,12 @@ def next_monday(date: datetime.date = datetime.date.today()) -> datetime.date:
 
 
 @bot.event
+async def on_ready() -> None:
+    """Do stuff on ready."""
+    activity_task.start()
+
+
+@bot.event
 async def on_message(message: discord.Message) -> None:
     """Do things on message received.
 
@@ -86,6 +96,13 @@ async def on_message(message: discord.Message) -> None:
             await message.add_reaction(emoji)
         else:
             await message.add_reaction(EMOJI_ALT)
+
+
+@discord.ext.tasks.loop(minutes=10)
+async def activity_task() -> None:
+    """Update activity."""
+    game: str = random.choice(GAMES)
+    await bot.change_presence(activity=discord.Game(name=game))
 
 
 @tree.command(name="sync", description="Synchronisiere Befehle.")
