@@ -5,15 +5,16 @@ import os
 import typing
 
 import discord
-import discord.ext.commands
+import discord.app_commands
 import requests
 
 
-__VERSION__ = 1, 0, 1
+__VERSION__ = 2, 0, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
 TOKEN = typing.cast(str, os.environ.get("DISCORD_BOT_TOKEN"))
+OWNER = int(typing.cast(str, os.environ.get("OWNER_ID")))
 
 # config values
 HOLIDAY_API_URL = "https://feiertage-api.de/api/?nur_land=BY"
@@ -26,8 +27,9 @@ EMOJI_ALT = "🤬"
 # bot setup
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
-bot: discord.ext.commands.Bot = discord.ext.commands.Bot(
-    command_prefix="/", intents=intents)
+bot: discord.Client = discord.Client(intents=intents)
+tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
+    client=bot)
 
 
 def get_holidays() -> dict[str, str]:
@@ -81,15 +83,30 @@ async def on_message(message: discord.Message) -> None:
             await message.add_reaction(emoji)
         else:
             await message.add_reaction(EMOJI_ALT)
-    await bot.process_commands(message)
 
 
-@bot.command(name="poll")
-async def create_poll(ctx: discord.ext.commands.context.Context) -> None:
+@tree.command(name="sync", description="Synchronisiere Befehle.")
+async def sync(interaction: discord.Interaction) -> None:
+    """Sync commands.
+
+    Arguments:
+        - interaction: the interaction that triggered the command.
+    """
+    if interaction.user.id == OWNER:
+        synced = await tree.sync()
+        await interaction.response.send_message(f"{len(synced)} Befehle synchronisiert.",
+                                                ephemeral=True)
+    else:
+        await interaction.response.send_message("Nur der Besitzer kann diesen Befehl verwenden.",
+                                                ephemeral=True)
+
+
+@tree.command(name="poll", description="Starte eine Umfrage.")
+async def create_poll(interaction: discord.Interaction) -> None:
     """Create poll.
 
     Arguments:
-        - ctx: the context of the command.
+        - interaction: the interaction that triggered the command.
     """
     poll: discord.Poll = discord.Poll(question=QUESTION_TEXT.format(
         datetime.datetime.now().isocalendar().week + 1),
@@ -102,7 +119,7 @@ async def create_poll(ctx: discord.ext.commands.context.Context) -> None:
         if date.isoformat() in holidays:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
-    await ctx.send(poll=poll)
+    await interaction.response.send_message(poll=poll)
 
 
 if __name__ == "__main__":
