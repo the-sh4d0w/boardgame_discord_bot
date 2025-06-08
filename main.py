@@ -6,13 +6,15 @@ import typing
 
 import discord
 import discord.app_commands
+import dotenv
 import requests
 
 
-__VERSION__ = 2, 0, 0
+__VERSION__ = 2, 1, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
+dotenv.load_dotenv()
 TOKEN = typing.cast(str, os.environ.get("DISCORD_BOT_TOKEN"))
 OWNER = int(typing.cast(str, os.environ.get("OWNER_ID")))
 
@@ -25,9 +27,10 @@ EMOJI_NAME = "Schafkopf_Nein_danke"
 EMOJI_ALT = "🤬"
 
 # bot setup
+activity: discord.Game = discord.Game(name="Brettspiele")
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
-bot: discord.Client = discord.Client(intents=intents)
+bot: discord.Client = discord.Client(intents=intents, activity=activity)
 tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot)
 
@@ -120,7 +123,6 @@ async def create_poll(interaction: discord.Interaction) -> None:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
     await interaction.response.send_message(poll=poll)
-
 
 if __name__ == "__main__":
     bot.run(TOKEN)
