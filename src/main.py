@@ -15,7 +15,7 @@ import models
 import utils
 
 
-__VERSION__ = 3, 0, 0
+__VERSION__ = 3, 1, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -50,9 +50,9 @@ async def on_message(message: discord.Message) -> None:
     Argumemts:
         - message: the actual message.
     """
+    reaction: models.Reaction
     message_text: str = message.content.lower()
     if message.guild:
-        reaction: models.Reaction
         for reaction in CONFIG.reactions:
             if reaction.phrase in message_text:
                 emoji: discord.Emoji | None = discord.utils.get(
@@ -78,12 +78,11 @@ async def sync(interaction: discord.Interaction) -> None:
         - interaction: the interaction that triggered the command.
     """
     if interaction.user.id == OWNER:
-        synced = await tree.sync()
+        synced: list[discord.app_commands.AppCommand] = await tree.sync()
         await interaction.response.send_message(f"{len(synced)} Befehle synchronisiert.",
                                                 ephemeral=True)
     else:
-        await interaction.response.send_message("Nur der Besitzer kann diesen Befehl verwenden.",
-                                                ephemeral=True)
+        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
 
 
 @tree.command(name="poll", description="Starte eine Umfrage.")
@@ -105,6 +104,31 @@ async def create_poll(interaction: discord.Interaction) -> None:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
     await interaction.response.send_message(poll=poll)
+
+
+@tree.context_menu(name="react")
+async def react(interaction: discord.Interaction, message: discord.Message) -> None:
+    """React to message.
+
+    Arguments:
+        - interaction: the interaction that triggered the command.
+        - message: message that context menu was executed on.
+    """
+    emojis: list[str | discord.Emoji | discord.PartialEmoji] = []
+    if interaction.user.id == OWNER:
+        await interaction.response.defer(ephemeral=True)
+        for reaction in message.reactions:
+            if interaction.user in [user async for user in reaction.users()]:
+                emojis.append(reaction.emoji)
+                await message.add_reaction(reaction.emoji)
+        if len(emojis) > 0:
+            await interaction.followup.send("Folgende Reaktionen hinzugefügt: "
+                                            + ", ".join(map(str, emojis)), ephemeral=True)
+        else:
+            await interaction.followup.send("Keine Reaktionen gefunden.", ephemeral=True)
+    else:
+        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+
 
 if __name__ == "__main__":
     bot.run(TOKEN)
