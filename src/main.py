@@ -15,7 +15,7 @@ import models
 import utils
 
 
-__VERSION__ = 3, 1, 0
+__VERSION__ = 3, 2, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -37,6 +37,43 @@ tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot)
 
 
+class ResponseModal(discord.ui.Modal, title="Antwort"):
+    """Response modal."""
+    name: discord.ui.TextInput = discord.ui.TextInput(
+        label="Text", placeholder="Antworttext hier")
+
+    def __init__(self, message: discord.Message) -> None:
+        """Initialise the modal.
+
+        Arguments:
+            - message: message to answer to.
+        """
+        super().__init__()
+        self.message: discord.Message = message
+
+    async def on_submit(self, interaction: discord.Interaction) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
+
+        Arguments:
+            - interaction: the interaction that triggered the function.
+        """
+        await self.message.reply(self.name.value)
+        await interaction.response.send_message(f"Antwort '{self.name.value}' gesendet.",
+                                                ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
+
+        Arguments:
+            - interaction: the interaction that triggered the function.
+            - error: the error that occurred.
+        """
+        await interaction.response.send_message(f"Ein Fehler trat auf: {type(error)}: {error}",
+                                                ephemeral=True)
+
+
 @bot.event
 async def on_ready() -> None:
     """Do stuff on ready."""
@@ -45,7 +82,7 @@ async def on_ready() -> None:
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
-    """Do things on message received.
+    """Do stuff on message received.
 
     Argumemts:
         - message: the actual message.
@@ -112,7 +149,7 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
 
     Arguments:
         - interaction: the interaction that triggered the command.
-        - message: message that context menu was executed on.
+        - message: message that context menu command was executed on.
     """
     emojis: list[str | discord.Emoji | discord.PartialEmoji] = []
     if interaction.user.id == OWNER:
@@ -126,6 +163,20 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
                                             + ", ".join(map(str, emojis)), ephemeral=True)
         else:
             await interaction.followup.send("Keine Reaktionen gefunden.", ephemeral=True)
+    else:
+        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+
+
+@tree.context_menu(name="respond")
+async def respond(interaction: discord.Interaction, message: discord.Message) -> None:
+    """Respond to message.
+
+    Arguments:
+        - interaction: the interaction that triggered the command.
+        - message: message that context menu command was executed on.
+    """
+    if interaction.user.id == OWNER:
+        await interaction.response.send_modal(ResponseModal(message))
     else:
         await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
 
