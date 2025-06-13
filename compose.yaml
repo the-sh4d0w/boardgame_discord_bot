@@ -1,6 +1,6 @@
 services:
   bot:
-    build: .
+    build: src
     container_name: boardgame_discord_bot
     restart: unless-stopped
     env_file:

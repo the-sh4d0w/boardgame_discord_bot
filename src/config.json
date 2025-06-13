@@ -1,0 +1,45 @@
+{
+    "holiday_api_url": "https://feiertage-api.de/api/?nur_land=BY",
+    "question_text": "Welche Tage (vrmtl. ab 15:00 / 16:00 / 17:00) nächste Woche (KW{0}) passen für euch?",
+    "weekday_names": [
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag"
+    ],
+    "games": [
+        "UNO",
+        "Mischwald",
+        "Die Crew",
+        "Azul",
+        "Poker",
+        "Carcassonne",
+        "Trio",
+        "Machi Koro",
+        "Nimalia",
+        "Die Siedler von Catan",
+        "Heimliche Herrschaft",
+        "Next Station: Paris",
+        "Challengers",
+        "Next Station: Tokyo",
+        "Next Station: London"
+    ],
+    "reactions": [
+        {
+            "phrase": "schafkopf",
+            "guild_emojis": [
+                "schafkopf_Nein_danke"
+            ],
+            "fallback_emoji": "🤬"
+        },
+        {
+            "phrase": "beim baum",
+            "guild_emojis": [
+                "Beim_Baum",
+                "Beim_Baum_alternativ"
+            ],
+            "fallback_emoji": "🌳"
+        }
+    ]
+}
