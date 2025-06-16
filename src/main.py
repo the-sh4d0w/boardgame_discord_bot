@@ -14,8 +14,10 @@ import dotenv
 import models
 import utils
 
+# TODO: translations
+# TODO: logging
 
-__VERSION__ = 3, 2, 0
+__VERSION__ = 3, 3, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -46,7 +48,7 @@ class ResponseModal(discord.ui.Modal, title="Antwort"):
         """Initialise the modal.
 
         Arguments:
-            - message: message to answer to.
+            - message: the message to answer to.
         """
         super().__init__()
         self.message: discord.Message = message
@@ -56,7 +58,7 @@ class ResponseModal(discord.ui.Modal, title="Antwort"):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction that triggered the function.
+            - interaction: the interaction being handled.
         """
         await self.message.reply(self.name.value)
         await interaction.response.send_message(f"Antwort '{self.name.value}' gesendet.",
@@ -67,11 +69,45 @@ class ResponseModal(discord.ui.Modal, title="Antwort"):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction that triggered the function.
+            - interaction: the interaction being handled.
             - error: the error that occurred.
         """
-        await interaction.response.send_message(f"Ein Fehler trat auf: {type(error)}: {error}",
+        await interaction.response.send_message(f"Ein Fehler trat auf: {error}. Kontaktiere "
+                                                f"<@{OWNER}>.", ephemeral=True)
+
+
+def check_if_owner():
+    """Check if the user is the bot owner."""
+    def predicate(interaction: discord.Interaction) -> bool:
+        """Predicate to check if the user is the bot owner.
+
+        Arguments:
+            - interaction: the interaction being handled.
+
+        Returns:
+            True if owner, False otherwise.
+        """
+        return interaction.user.id == OWNER
+    return discord.app_commands.check(predicate)
+
+
+@tree.error
+async def on_error(interaction: discord.Interaction,
+                   error: discord.app_commands.AppCommandError) -> None:
+    """Do stuff on error.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - error: the error being raised.
+    """
+    if isinstance(error, discord.app_commands.MissingPermissions):
+        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+    elif isinstance(error, discord.app_commands.CheckFailure):
+        await interaction.response.send_message(f"Fehler: Du bist nicht <@{OWNER}>.",
                                                 ephemeral=True)
+    else:
+        await interaction.response.send_message(f"Ein Fehler trat auf: {error}. Kontaktiere "
+                                                f"<@{OWNER}>.", ephemeral=True)
 
 
 @bot.event
@@ -108,18 +144,17 @@ async def activity_task() -> None:
 
 
 @tree.command(name="sync", description="Synchronisiere Befehle.")
+@discord.app_commands.default_permissions()
+@check_if_owner()
 async def sync(interaction: discord.Interaction) -> None:
     """Sync commands.
 
     Arguments:
-        - interaction: the interaction that triggered the command.
+        - interaction: the interaction being handled.
     """
-    if interaction.user.id == OWNER:
-        synced: list[discord.app_commands.AppCommand] = await tree.sync()
-        await interaction.response.send_message(f"{len(synced)} Befehle synchronisiert.",
-                                                ephemeral=True)
-    else:
-        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+    synced: list[discord.app_commands.AppCommand] = await tree.sync()
+    await interaction.response.send_message(f"{len(synced)} Befehle synchronisiert.",
+                                            ephemeral=True)
 
 
 @tree.command(name="poll", description="Starte eine Umfrage.")
@@ -127,7 +162,7 @@ async def create_poll(interaction: discord.Interaction) -> None:
     """Create poll.
 
     Arguments:
-        - interaction: the interaction that triggered the command.
+        - interaction: the interaction being handled.
     """
     poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format(
         datetime.datetime.now().isocalendar().week + 1),
@@ -144,41 +179,39 @@ async def create_poll(interaction: discord.Interaction) -> None:
 
 
 @tree.context_menu(name="react")
+@discord.app_commands.default_permissions(administrator=True)
+@discord.app_commands.checks.has_permissions(administrator=True)
 async def react(interaction: discord.Interaction, message: discord.Message) -> None:
     """React to message.
 
     Arguments:
-        - interaction: the interaction that triggered the command.
-        - message: message that context menu command was executed on.
+        - interaction: the interaction being handled.
+        - message: the message that the context menu command was executed on.
     """
     emojis: list[str | discord.Emoji | discord.PartialEmoji] = []
-    if interaction.user.id == OWNER:
-        await interaction.response.defer(ephemeral=True)
-        for reaction in message.reactions:
-            if interaction.user in [user async for user in reaction.users()]:
-                emojis.append(reaction.emoji)
-                await message.add_reaction(reaction.emoji)
-        if len(emojis) > 0:
-            await interaction.followup.send("Folgende Reaktionen hinzugefügt: "
-                                            + ", ".join(map(str, emojis)), ephemeral=True)
-        else:
-            await interaction.followup.send("Keine Reaktionen gefunden.", ephemeral=True)
+    await interaction.response.defer(ephemeral=True)
+    for reaction in message.reactions:
+        if interaction.user in [user async for user in reaction.users()]:
+            emojis.append(reaction.emoji)
+            await message.add_reaction(reaction.emoji)
+    if len(emojis) > 0:
+        await interaction.followup.send("Folgende Reaktionen hinzugefügt: "
+                                        + ", ".join(map(str, emojis)), ephemeral=True)
     else:
-        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+        await interaction.followup.send("Keine Reaktionen gefunden.", ephemeral=True)
 
 
 @tree.context_menu(name="respond")
+@discord.app_commands.default_permissions(administrator=True)
+@discord.app_commands.checks.has_permissions(administrator=True)
 async def respond(interaction: discord.Interaction, message: discord.Message) -> None:
     """Respond to message.
 
     Arguments:
-        - interaction: the interaction that triggered the command.
-        - message: message that context menu command was executed on.
+        - interaction: the interaction being handled.
+        - message: the message that the context menu command was executed on.
     """
-    if interaction.user.id == OWNER:
-        await interaction.response.send_modal(ResponseModal(message))
-    else:
-        await interaction.response.send_message("Fehlende Berechtigung.", ephemeral=True)
+    await interaction.response.send_modal(ResponseModal(message))
 
 
 if __name__ == "__main__":
