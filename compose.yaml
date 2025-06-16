@@ -5,3 +5,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    develop:
+      watch:
+        - action: rebuild
+          path: src
