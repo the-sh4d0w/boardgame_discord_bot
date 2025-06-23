@@ -12,6 +12,7 @@ class Reaction(pydantic.BaseModel):
 
 class Config(pydantic.BaseModel):
     """Config model."""
+    fallback_lang: str
     holiday_api_url: str
     question_text: str
     weekday_names: list[str]
