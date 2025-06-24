@@ -6,37 +6,51 @@ import discord
 
 import utils
 
+# FIXME: split this in two to get proper submit functionality
 
-class ResponseModal(discord.ui.Modal):
-    """Response modal."""
 
-    @classmethod
-    async def create(cls, interaction: discord.Interaction, message: discord.Message,
-                     owner: int) -> "ResponseModal":
-        """Create a response modal. Exists because __init__ can't be async.
+class TextModal(discord.ui.Modal):
+    """Text modal."""
 
-        Arguments:
-            - interaction: the interaction being handled.
-            - message: the message to answer to.
-        """
-        locale: str = interaction.locale.value
-        modal: ResponseModal = ResponseModal(utils.translate("respond_title", locale),
-                                             message, owner)
-        text_input: discord.ui.TextInput = discord.ui.TextInput(
-            label=utils.translate("respond_label", locale))
-        modal.add_item(text_input)
-        return modal
-
-    def __init__(self, title: str, message: discord.Message, owner: int) -> None:
+    def __init__(self, title: str, label: str, owner: int) -> None:
         """Initialise the modal.
 
         Arguments:
             - title: modal title.
-            - message: the message to answer to.
+            - label: text input label.
+            - owner: the user id of the owner.
         """
         super().__init__(title=title)
-        self.message: discord.Message = message
         self.owner: int = owner
+        self.add_item(discord.ui.TextInput(label=label))
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
+
+        Arguments:
+            - interaction: the interaction being handled.
+            - error: the error that occurred.
+        """
+        locale: str = interaction.locale.value
+        await interaction.response.send_message(utils.translate("error", locale, error=error,
+                                                                OWNER=self.owner), ephemeral=True)
+
+
+class ResponseModal(TextModal):
+    """Response modal."""
+
+    def __init__(self, title: str, label: str, owner: int, message: discord.Message) -> None:
+        """Initialise the modal.
+
+        Arguments:
+            - title: modal title.
+            - label: text input label.
+            - owner: the user id of the owner.
+            - message: message to respond to.
+        """
+        super().__init__(title, label, owner)
+        self.message: discord.Message = message
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -51,14 +65,31 @@ class ResponseModal(discord.ui.Modal):
         await interaction.response.send_message(utils.translate("respond_submit", locale,
                                                                 text=text), ephemeral=True)
 
-    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+
+class MessageModal(TextModal):
+    """Message modal."""
+
+    def __init__(self, title: str, label: str, owner: int, channel: discord.TextChannel) -> None:
+        """Initialise the modal.
+
+        Arguments:
+            - title: modal title.
+            - label: text input label.
+            - owner: the user id of the owner.
+            - channel: the channel to message.
+        """
+        super().__init__(title, label, owner)
+        self.channel: discord.TextChannel = channel
+
+    async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
         """Do stuff on submit.
 
         Arguments:
             - interaction: the interaction being handled.
-            - error: the error that occurred.
         """
         locale: str = interaction.locale.value
-        await interaction.response.send_message(utils.translate("error", locale, error=error,
-                                                                OWNER=self.owner), ephemeral=True)
+        text: str = typing.cast(discord.ui.TextInput, self.children[0]).value
+        await self.channel.send(text)
+        await interaction.response.send_message(utils.translate("msg_submit", locale,
+                                                                text=text), ephemeral=True)

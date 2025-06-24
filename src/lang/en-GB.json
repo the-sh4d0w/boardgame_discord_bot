@@ -1,7 +1,7 @@
 {
     "sync_name": "sync",
     "sync_desc": "Synchronise commands.",
-    "sync_text": "{amount} commands synchronised.",
+    "sync_text": "{amount} commands synchronised: {synced}",
     "poll_name": "poll",
     "poll_desc": "Start a poll.",
     "react_name": "react",
@@ -9,8 +9,13 @@
     "react_fail": "No reactions found.",
     "respond_name": "respond",
     "respond_title": "Response",
-    "respond_label": "Message Text",
+    "respond_label": "Response Text",
     "respond_submit": "Answer '{text}' has been sent.",
+    "msg_name": "message",
+    "msg_desc": "Send a message.",
+    "msg_title": "Response",
+    "msg_label": "Message Text",
+    "msg_submit": "Message '{text}' has been sent.",
     "error": "An error occurred: {error}. Contact <@{OWNER}>.",
     "error_perm": "Missing permissions: {permissions}",
     "error_owner": "Error: You are not <@{OWNER}>."

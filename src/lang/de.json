@@ -1,7 +1,7 @@
 {
     "sync_name": "sync",
     "sync_desc": "Synchronisiere Befehle.",
-    "sync_text": "{amount} Befehle synchronisiert.",
+    "sync_text": "{amount} Befehle synchronisiert: {synced}",
     "poll_name": "umfrage",
     "poll_desc": "Starte eine Umfrage.",
     "react_name": "reagieren",
@@ -11,6 +11,11 @@
     "respond_title": "Antwort",
     "respond_label": "Antworttext",
     "respond_submit": "Antwort '{text}' wurde gesendet.",
+    "msg_name": "nachricht",
+    "msg_desc": "Sende eine Nachricht.",
+    "msg_title": "Nachricht",
+    "msg_label": "Text der Nachricht",
+    "msg_submit": "Nachricht '{text}' wurde gesendet.",
     "error": "Ein Fehler trat auf: {error}. Kontaktiere <@{OWNER}>.",
     "error_perm": "Fehlende Berechtigungen: {permissions}",
     "error_owner": "Fehler: Du bist nicht <@{OWNER}>."
