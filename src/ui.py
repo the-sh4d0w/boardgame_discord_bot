@@ -6,8 +6,6 @@ import discord
 
 import utils
 
-# FIXME: split this in two to get proper submit functionality
-
 
 class TextModal(discord.ui.Modal):
     """Text modal."""
