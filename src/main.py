@@ -27,18 +27,15 @@ import utils
 # TODO: fix calendar week bug
 # TODO: fix sunday 18:00 bug
 # TODO: suggest board games (BGG list?)
-# TODO: install contexts (DMs, server, ...)
 # TODO: manually set activity
 # TODO: delete bot messages
-# TODO: ascension command (and maybe general role management)
-# TODO: move sync to DMs
+# TODO: ascension command (and maybe general role management) -> just make it agnostic with id
 # TODO: analysis
-# TODO: also add english (simplified)
 # TODO: more extensive logging of actions on discord (users joining by which  method; users \
 #       leaving; etc.) -> maybe?; for statistics?
 
 
-__VERSION__ = 3, 5, 0
+__VERSION__ = 3, 6, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -58,8 +55,7 @@ intents.message_content = True
 bot: discord.Client = discord.Client(intents=intents)
 tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot,
-    # FIXME: this doesn't seem to work
-    allowed_installs=discord.app_commands.installs.AppInstallationType(guild=True, user=False))
+    allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False))
 
 
 class BoardgameTranslator(discord.app_commands.Translator):
@@ -143,7 +139,7 @@ async def activity_task() -> None:
 
 # commands
 @tree.command(name="sync_name", description="sync_desc")
-@discord.app_commands.default_permissions()
+@discord.app_commands.dm_only()
 @utils.check_if_owner(OWNER)
 async def sync(interaction: discord.Interaction) -> None:
     """Sync commands.
@@ -162,6 +158,7 @@ async def sync(interaction: discord.Interaction) -> None:
 
 
 @tree.command(name="poll_name", description="poll_desc")
+@discord.app_commands.guild_only()
 async def create_poll(interaction: discord.Interaction) -> None:
     """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
 
@@ -185,6 +182,7 @@ async def create_poll(interaction: discord.Interaction) -> None:
 
 
 @tree.command(name="msg_name", description="msg_desc")
+@discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
 async def send_message(interaction: discord.Interaction) -> None:
@@ -203,6 +201,7 @@ async def send_message(interaction: discord.Interaction) -> None:
 
 # context menu commands
 @tree.context_menu(name="react_name")
+@discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
 async def react(interaction: discord.Interaction, message: discord.Message) -> None:
@@ -227,6 +226,7 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
 
 
 @tree.context_menu(name="respond_name")
+@discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
 async def respond(interaction: discord.Interaction, message: discord.Message) -> None:
