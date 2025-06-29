@@ -1,9 +1,12 @@
 """Boardgame discord bot."""
 
 import datetime
+import logging
 import os
 import pathlib
+import queue
 import random
+import sys
 import typing
 
 import discord
@@ -16,8 +19,7 @@ import ui
 import utils
 
 
-# TODO: logging (including in a discord channel)
-# TODO: log errors, starting and closing in channel
+# TODO: persistent logs for docker
 # TODO: localised times
 # TODO: close poll early (context menu command)
 # TODO: automatically create event
@@ -33,20 +35,23 @@ import utils
 # TODO: analysis
 # TODO: more extensive logging of actions on discord (users joining by which  method; users \
 #       leaving; etc.) -> maybe?; for statistics?
+# TODO: a bit of general cleanup
 
 
-__VERSION__ = 3, 6, 0
+__VERSION__ = 3, 7, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
 dotenv.load_dotenv()
 TOKEN: str = typing.cast(str, os.environ.get("DISCORD_BOT_TOKEN"))
 OWNER: int = int(typing.cast(str, os.environ.get("OWNER_ID")))
+LOG_CHANNEL: int = int(typing.cast(str, os.environ.get("LOG_CHANNEL")))
 
 # config values
 CONFIG_PATH: str = "config.json"
 CONFIG: models.Config = models.Config.model_validate_json(
     pathlib.Path(CONFIG_PATH).read_text(encoding="utf-8"))
+LOG_FILE: str = f"log_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log"
 
 
 # bot setup
@@ -57,23 +62,13 @@ tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot,
     allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False))
 
-
-class BoardgameTranslator(discord.app_commands.Translator):
-    """Boardgame translator."""
-
-    async def translate(self, string: discord.app_commands.locale_str, locale: discord.Locale,
-                        context: discord.app_commands.TranslationContext | None) -> str | None:
-        """Translate the string to the given locale.
-
-        Arguments:
-            - string: the translation key.
-            - locale: the discord locale to translate to.
-            - context: additional translation context.
-
-        Returns:
-            Translated string if locale exists, None otherwise.
-        """
-        return utils.translate(string.message, locale.value)
+# logging setup
+log_queue: queue.Queue[discord.Embed] = queue.Queue()
+logger: logging.Logger = logging.getLogger("discord")
+logging.basicConfig(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S", style="{",
+                    format="[{asctime}] [{levelname}] ({funcName}) {message}",
+                    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout),
+                              utils.DiscordHandler(log_queue)])
 
 
 # handling errors
@@ -87,16 +82,34 @@ async def on_error(interaction: discord.Interaction,
         - error: the error being raised.
     """
     locale: str = interaction.locale.value
+    send: typing.Callable = interaction.followup.send if interaction.response.is_done() \
+        else interaction.response.send_message
+    # user with missing permissions tried to use command
     if isinstance(error, discord.app_commands.MissingPermissions):
-        await interaction.followup.send(utils.translate(
-            "error_perm", locale, permissions=", ".join(error.missing_permissions)),
-            ephemeral=True)
+        miss_perms: str = ", ".join(error.missing_permissions)
+        if interaction.command and interaction.data:
+            cmd_mention: str = f"</{interaction.command.name}:{interaction.data.get("id")}>"
+            logging.exception(msg=f"{interaction.user.mention} tried to use command {cmd_mention}"
+                              f" in <#{interaction.channel_id}> while missing the following"
+                              f"permissions: {miss_perms}", exc_info=error)
+        await send(utils.translate("error_perm", locale, permissions=miss_perms), ephemeral=True)
+    # user that is not owner tried to use command
     elif isinstance(error, discord.app_commands.CheckFailure):
-        await interaction.followup.send(utils.translate("error_owner", locale, OWNER=OWNER),
-                                        ephemeral=True)
+        if interaction.command and interaction.data:
+            cmd_mention: str = f"</{interaction.command.name}:{interaction.data.get("id")}>"
+            logging.exception(msg=f"{interaction.user.mention} tried to use command {cmd_mention}"
+                              f" in <#{interaction.channel_id}> despite not being <@{OWNER}>.",
+                              exc_info=error)
+        await send(utils.translate("error_owner", locale, OWNER=OWNER), ephemeral=True)
+    # generic exception occurred
     else:
-        await interaction.followup.send(utils.translate("error", locale, error=error,
-                                                        OWNER=OWNER), ephemeral=True)
+        if interaction.command and interaction.data:
+            cmd_mention: str = f"</{interaction.command.name}:{interaction.data.get("id")}>"
+            logging.exception(msg=f"Command {cmd_mention} was used by {interaction.user.mention}"
+                              f" in <#{interaction.channel_id}>.", exc_info=error)
+        else:
+            logging.exception(msg="An error occurred.", exc_info=error)
+        await send(utils.translate("error", locale, OWNER=OWNER), ephemeral=True)
 
 
 # handling events
@@ -104,9 +117,11 @@ async def on_error(interaction: discord.Interaction,
 async def on_ready() -> None:
     """Do stuff on ready."""
     if tree.translator is None:
-        await tree.set_translator(BoardgameTranslator())
+        await tree.set_translator(utils.BoardgameTranslator())
     if not activity_task.is_running():
         activity_task.start()
+    if not log_task.is_running():
+        log_task.start()
 
 
 @bot.event
@@ -123,6 +138,10 @@ async def on_message(message: discord.Message) -> None:
             if reaction.phrase in message_text:
                 emoji: discord.Emoji | None = discord.utils.get(
                     message.guild.emojis, name=random.choice(reaction.guild_emojis))
+                msg: str = f"Message in by {message.author.mention} <#{message.channel.id}> " \
+                    f"contained phrase '{reaction.phrase}'. The following reaction was " \
+                    f"added: {reaction.fallback_emoji}."
+                logging.info(msg)
                 if emoji:
                     await message.add_reaction(emoji)
                 else:
@@ -130,15 +149,27 @@ async def on_message(message: discord.Message) -> None:
 
 
 # tasks
-@discord.ext.tasks.loop(minutes=10)
+@discord.ext.tasks.loop(minutes=30)
 async def activity_task() -> None:
     """Update activity."""
     game: str = random.choice(CONFIG.games)
+    msg: str = f"Activity changed to 'Playing {game}'."
+    logging.info(msg)
     await bot.change_presence(activity=discord.Game(name=game))
 
 
+@discord.ext.tasks.loop(seconds=10)
+async def log_task() -> None:
+    """Log records by actually sending them to the log channel on discord."""
+    log_channel: discord.TextChannel = typing.cast(discord.TextChannel,
+                                                   bot.get_channel(LOG_CHANNEL))
+    while not log_queue.empty():
+        embed: discord.Embed = log_queue.get()
+        await log_channel.send(embed=embed)
+
+
 # commands
-@tree.command(name="sync_name", description="sync_desc")
+@tree.command(name="sync", description="sync_desc")
 @discord.app_commands.dm_only()
 @utils.check_if_owner(OWNER)
 async def sync(interaction: discord.Interaction) -> None:
@@ -147,6 +178,7 @@ async def sync(interaction: discord.Interaction) -> None:
     Arguments:
         - interaction: the interaction being handled.
     """
+    utils.log_command(interaction)
     locale: str = interaction.locale.value
     await interaction.response.defer(ephemeral=True)
     synced: list[discord.app_commands.AppCommand] = await tree.sync()
@@ -157,7 +189,7 @@ async def sync(interaction: discord.Interaction) -> None:
     await interaction.followup.send(content=text, ephemeral=True)
 
 
-@tree.command(name="poll_name", description="poll_desc")
+@tree.command(name="poll", description="poll_desc")
 @discord.app_commands.guild_only()
 async def create_poll(interaction: discord.Interaction) -> None:
     """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
@@ -167,6 +199,7 @@ async def create_poll(interaction: discord.Interaction) -> None:
     """
     index: int
     name: str
+    utils.log_command(interaction)
     poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format(
         datetime.datetime.now().isocalendar().week + 1),
         duration=utils.next_sunday_1800() - datetime.datetime.now(), multiple=True)
@@ -181,7 +214,7 @@ async def create_poll(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(poll=poll)
 
 
-@tree.command(name="msg_name", description="msg_desc")
+@tree.command(name="msg", description="msg_desc")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
@@ -191,6 +224,7 @@ async def send_message(interaction: discord.Interaction) -> None:
     Arguments:
         - interaction: the interaction being handled.
     """
+    utils.log_command(interaction)
     locale: str = interaction.locale.value
     title: str = utils.translate("msg_title", locale)
     label: str = utils.translate("msg_label", locale)
@@ -200,7 +234,7 @@ async def send_message(interaction: discord.Interaction) -> None:
 
 
 # context menu commands
-@tree.context_menu(name="react_name")
+@tree.context_menu(name="react")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
@@ -211,6 +245,7 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
         - interaction: the interaction being handled.
         - message: the message that the context menu command was executed on.
     """
+    utils.log_command(interaction)
     locale: str = interaction.locale.value
     emojis: list[str | discord.Emoji | discord.PartialEmoji] = []
     await interaction.response.defer(ephemeral=True)
@@ -225,7 +260,7 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
         await interaction.followup.send(utils.translate("react_fail", locale), ephemeral=True)
 
 
-@tree.context_menu(name="respond_name")
+@tree.context_menu(name="respond")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.checks.has_permissions(administrator=True)
@@ -236,6 +271,7 @@ async def respond(interaction: discord.Interaction, message: discord.Message) ->
         - interaction: the interaction being handled.
         - message: the message that the context menu command was executed on.
     """
+    utils.log_command(interaction)
     locale: str = interaction.locale.value
     title: str = utils.translate("respond_title", locale)
     label: str = utils.translate("respond_label", locale)
@@ -243,4 +279,4 @@ async def respond(interaction: discord.Interaction, message: discord.Message) ->
 
 
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    bot.run(token=TOKEN, log_handler=None)
