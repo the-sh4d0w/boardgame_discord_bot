@@ -19,10 +19,10 @@ COMMAND: int = 21
 REACTION: int = 22
 ACTIVITY: int = 23
 LOG_LEVEL_COLOURS: dict[int, discord.Colour] = {
-    logging.DEBUG: discord.Colour.yellow(),
+    logging.DEBUG: discord.Colour.dark_grey(),
     logging.INFO: discord.Colour.blue(),
     COMMAND: discord.Colour.green(),
-    REACTION: discord.Colour.purple(),
+    REACTION: discord.Colour.yellow(),
     ACTIVITY: discord.Colour.purple(),
     logging.WARNING: discord.Colour.orange(),
     logging.ERROR: discord.Colour.red(),

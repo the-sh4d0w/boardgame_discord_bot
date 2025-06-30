@@ -32,7 +32,7 @@ import utils
 # TODO: a bit of general cleanup
 
 
-__VERSION__ = 3, 9, 0
+__VERSION__ = 3, 9, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
