@@ -23,13 +23,11 @@ import utils
 # TODO: localised times -> where?
 # TODO: automatically create event
 # TODO: optional alternative end datetime for poll
-# TODO: better general error handling
 # TODO: improve config validation
 # TODO: fix calendar week bug
 # TODO: fix sunday 18:00 bug
 # TODO: suggest board games (BGG list?)
 # TODO: manually set activity
-# TODO: ascension command (and maybe general role management) -> just make it agnostic with id
 # TODO: analysis and statistics
 # TODO: a bit of general cleanup
 
@@ -53,6 +51,7 @@ LOG_FILE: str = f"log_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.lo
 # bot setup
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot: discord.Client = discord.Client(intents=intents)
 tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot,
@@ -118,6 +117,7 @@ async def on_ready() -> None:
         activity_task.start()
     if not log_task.is_running():
         log_task.start()
+    # called multiple times; not only when first started
     text: str = f"Bot running version {".".join(map(str, __VERSION__))}."
     logging.info(text)
 
@@ -185,6 +185,62 @@ async def sync(interaction: discord.Interaction) -> None:
     text: str = utils.translate("sync_text", locale, amount=len(synced),
                                 synced=commands)
     await interaction.followup.send(content=text, ephemeral=True)
+
+
+@tree.command(name="ascend", description="ascend_desc")
+@discord.app_commands.describe(server_id="ascend_server-id")
+@discord.app_commands.describe(role_id="ascend_role-id")
+@discord.app_commands.describe(user_id="ascend_user-id")
+@discord.app_commands.dm_only()
+@utils.check_if_owner(OWNER)
+async def ascend(interaction: discord.Interaction, server_id: str, role_id: str,
+                 user_id: str = str(OWNER)) -> None:
+    """Ascend.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - server_id: the ID of the server.
+        - role_id: the ID of the role.
+        - user_id: the ID of the user.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    if (guild := bot.get_guild(int(server_id))) and (role := guild.get_role(int(role_id))) \
+            and (member := guild.get_member(int(user_id))):
+        await member.add_roles(role)
+        await interaction.response.send_message(utils.translate(
+            "ascend_success", locale, role=role.mention, member=member.mention), ephemeral=True)
+    else:
+        await interaction.response.send_message(utils.translate("ascend_fail", locale),
+                                                ephemeral=True)
+
+
+@tree.command(name="descend", description="descend_desc")
+@discord.app_commands.describe(server_id="descend_server-id")
+@discord.app_commands.describe(role_id="descend_role-id")
+@discord.app_commands.describe(user_id="descend_user-id")
+@discord.app_commands.dm_only()
+@utils.check_if_owner(OWNER)
+async def descend(interaction: discord.Interaction, server_id: str, role_id: str,
+                  user_id: str = str(OWNER)) -> None:
+    """Descend.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - server_id: the ID of the server.
+        - role_id: the ID of the role.
+        - user_id: the ID of the user.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    if (guild := bot.get_guild(int(server_id))) and (role := guild.get_role(int(role_id))) \
+            and (member := guild.get_member(int(user_id))):
+        await member.remove_roles(role)
+        await interaction.response.send_message(utils.translate(
+            "descend_success", locale, role=role.mention, member=member.mention), ephemeral=True)
+    else:
+        await interaction.response.send_message(utils.translate("descend_fail", locale),
+                                                ephemeral=True)
 
 
 @tree.command(name="poll", description="poll_desc")
