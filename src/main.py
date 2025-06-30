@@ -19,9 +19,8 @@ import ui
 import utils
 
 
-# TODO: persistent logs for docker
-# TODO: localised times
-# TODO: close poll early (context menu command)
+# TODO: persistent logs for docker (and log DEBUG to file)
+# TODO: localised times -> where?
 # TODO: automatically create event
 # TODO: optional alternative end datetime for poll
 # TODO: better general error handling
@@ -30,15 +29,12 @@ import utils
 # TODO: fix sunday 18:00 bug
 # TODO: suggest board games (BGG list?)
 # TODO: manually set activity
-# TODO: delete bot messages
 # TODO: ascension command (and maybe general role management) -> just make it agnostic with id
-# TODO: analysis
-# TODO: more extensive logging of actions on discord (users joining by which  method; users \
-#       leaving; etc.) -> maybe?; for statistics?
+# TODO: analysis and statistics
 # TODO: a bit of general cleanup
 
 
-__VERSION__ = 3, 7, 0
+__VERSION__ = 3, 8, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -122,6 +118,8 @@ async def on_ready() -> None:
         activity_task.start()
     if not log_task.is_running():
         log_task.start()
+    text: str = f"Bot running version {".".join(map(str, __VERSION__))}."
+    logging.info(text)
 
 
 @bot.event
@@ -216,8 +214,7 @@ async def create_poll(interaction: discord.Interaction) -> None:
 
 @tree.command(name="msg", description="msg_desc")
 @discord.app_commands.guild_only()
-@discord.app_commands.default_permissions(administrator=True)
-@discord.app_commands.checks.has_permissions(administrator=True)
+@discord.app_commands.default_permissions()
 async def send_message(interaction: discord.Interaction) -> None:
     """Send a message.
 
@@ -236,8 +233,7 @@ async def send_message(interaction: discord.Interaction) -> None:
 # context menu commands
 @tree.context_menu(name="react")
 @discord.app_commands.guild_only()
-@discord.app_commands.default_permissions(administrator=True)
-@discord.app_commands.checks.has_permissions(administrator=True)
+@discord.app_commands.default_permissions()
 async def react(interaction: discord.Interaction, message: discord.Message) -> None:
     """React to message.
 
@@ -262,8 +258,7 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
 
 @tree.context_menu(name="respond")
 @discord.app_commands.guild_only()
-@discord.app_commands.default_permissions(administrator=True)
-@discord.app_commands.checks.has_permissions(administrator=True)
+@discord.app_commands.default_permissions()
 async def respond(interaction: discord.Interaction, message: discord.Message) -> None:
     """Respond to message.
 
@@ -276,6 +271,58 @@ async def respond(interaction: discord.Interaction, message: discord.Message) ->
     title: str = utils.translate("respond_title", locale)
     label: str = utils.translate("respond_label", locale)
     await interaction.response.send_modal(ui.ResponseModal(title, label, OWNER, message))
+
+
+@tree.context_menu(name="close")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions()
+async def close_poll(interaction: discord.Interaction, message: discord.Message) -> None:
+    """Close a bot poll.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - message: the message that the context menu command was executed on.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
+    if message.poll:
+        if message.author.id == bot_id:
+            if not message.poll.is_finalised():
+                await message.poll.end()
+                await interaction.response.send_message(utils.translate("close_success", locale),
+                                                        ephemeral=True)
+            else:
+                await interaction.response.send_message(utils.translate("close_already", locale),
+                                                        ephemeral=True)
+        else:
+            await interaction.response.send_message(utils.translate("close_not-bot", locale,
+                                                                    bot=bot_id), ephemeral=True)
+    else:
+        await interaction.response.send_message(utils.translate("close_not-poll", locale),
+                                                ephemeral=True)
+
+
+@tree.context_menu(name="delete")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions()
+async def delete_msg(interaction: discord.Interaction, message: discord.Message) -> None:
+    """Delete a bot message.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - message: the message that the context menu command was executed on.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
+    if message.author.id == typing.cast(discord.ClientUser, bot.user).id:
+        await message.delete()
+        await interaction.response.send_message(utils.translate("delete_success", locale),
+                                                ephemeral=True)
+    else:
+        await interaction.response.send_message(utils.translate("delete_fail", locale,
+                                                                bot=bot_id), ephemeral=True)
 
 
 if __name__ == "__main__":
