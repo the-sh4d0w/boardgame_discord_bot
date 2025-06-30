@@ -11,13 +11,19 @@ import typing
 import discord
 import requests
 
+import models
+
 
 LANG_PATH: str = "path"
 COMMAND: int = 21
+REACTION: int = 22
+ACTIVITY: int = 23
 LOG_LEVEL_COLOURS: dict[int, discord.Colour] = {
     logging.DEBUG: discord.Colour.yellow(),
     logging.INFO: discord.Colour.blue(),
     COMMAND: discord.Colour.green(),
+    REACTION: discord.Colour.purple(),
+    ACTIVITY: discord.Colour.purple(),
     logging.WARNING: discord.Colour.orange(),
     logging.ERROR: discord.Colour.red(),
     logging.CRITICAL: discord.Colour.dark_red()
@@ -26,11 +32,15 @@ LOG_LEVEL_EMOJIS: dict[int, str] = {
     logging.DEBUG: "https://cdn.discordapp.com/emojis/1387999726204358796.webp",
     logging.INFO: "https://cdn.discordapp.com/emojis/1387999724853923983.webp",
     COMMAND: "https://cdn.discordapp.com/emojis/1388360110262325409.webp",
+    REACTION: "https://cdn.discordapp.com/emojis/1389279750496714916.webp",
+    ACTIVITY: "https://cdn.discordapp.com/emojis/1389280670487941141.webp",
     logging.WARNING: "https://cdn.discordapp.com/emojis/1387999723436114082.webp",
     logging.ERROR: "https://cdn.discordapp.com/emojis/1387999720831455403.webp",
     logging.CRITICAL: "https://cdn.discordapp.com/emojis/1387999722144403637.webp"
 }
 logging.addLevelName(COMMAND, "COMMAND")
+logging.addLevelName(REACTION, "REACTION")
+logging.addLevelName(ACTIVITY, "ACTIVITY")
 
 
 class DiscordHandler(logging.Handler):
@@ -53,7 +63,7 @@ class DiscordHandler(logging.Handler):
         """
         embed: discord.Embed
         match record.levelno:
-            case 21:  # COMMAND (using the variable doesn't work for whatever reason)
+            case 21 | 22:  # COMMAND, REACTION
                 embed = discord.Embed(colour=LOG_LEVEL_COLOURS[record.levelno],
                                       title=record.funcName,
                                       description=record.message,
@@ -71,7 +81,7 @@ class DiscordHandler(logging.Handler):
                                  icon_url=LOG_LEVEL_EMOJIS[record.levelno])
                 embed.add_field(name="Traceback",
                                 value=f"```{error[1].with_traceback(error[2])}```")
-            case _:  # INFO, WARNING, DEBUG (below log level)
+            case _:  # INFO, WARNING, REACTION, DEBUG (below log level)
                 embed = discord.Embed(colour=LOG_LEVEL_COLOURS[record.levelno],
                                       title=record.funcName,
                                       description=f"```{record.message}```",
@@ -109,6 +119,28 @@ def log_command(interaction: discord.Interaction) -> None:
         cmd_mention: str = f"</{interaction.command.name}:{interaction.data.get("id")}>"
         logging.log(stacklevel=2, level=COMMAND, msg=f"Command {cmd_mention} was used by "
                     f"{interaction.user.mention} in <#{interaction.channel_id}>.")
+
+
+def log_reaction(message: discord.Message, reaction: models.Reaction) -> None:
+    """Log the reaction.
+
+    Arguments:
+        - message: the message being reacted to.
+        - reaction: the reaction.
+    """
+    logging.log(stacklevel=2, level=REACTION, msg=f"Message by {message.author.mention} in "
+                f"<#{message.channel.id}> contained phrase '{reaction.phrase}'. The following "
+                f"reaction was added: {reaction.fallback_emoji}.")
+
+
+def log_activity(activity: discord.BaseActivity) -> None:
+    """Log the change of activity.
+
+    Arguments:
+        - activity: the new activity.
+    """
+    logging.log(stacklevel=2, level=ACTIVITY,
+                msg=f"Changed activity to {activity}.")
 
 
 def get_holidays(url: str) -> dict[str, str]:

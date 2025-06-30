@@ -32,7 +32,7 @@ import utils
 # TODO: a bit of general cleanup
 
 
-__VERSION__ = 3, 8, 0
+__VERSION__ = 3, 9, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -136,10 +136,7 @@ async def on_message(message: discord.Message) -> None:
             if reaction.phrase in message_text:
                 emoji: discord.Emoji | None = discord.utils.get(
                     message.guild.emojis, name=random.choice(reaction.guild_emojis))
-                msg: str = f"Message in by {message.author.mention} <#{message.channel.id}> " \
-                    f"contained phrase '{reaction.phrase}'. The following reaction was " \
-                    f"added: {reaction.fallback_emoji}."
-                logging.info(msg)
+                utils.log_reaction(message, reaction)
                 if emoji:
                     await message.add_reaction(emoji)
                 else:
@@ -150,10 +147,10 @@ async def on_message(message: discord.Message) -> None:
 @discord.ext.tasks.loop(minutes=30)
 async def activity_task() -> None:
     """Update activity."""
-    game: str = random.choice(CONFIG.games)
-    msg: str = f"Activity changed to 'Playing {game}'."
-    logging.info(msg)
-    await bot.change_presence(activity=discord.Game(name=game))
+    activity: discord.BaseActivity = discord.Game(
+        name=random.choice(CONFIG.games))
+    utils.log_activity(activity)
+    await bot.change_presence(activity=activity)
 
 
 @discord.ext.tasks.loop(seconds=10)
