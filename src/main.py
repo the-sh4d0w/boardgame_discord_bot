@@ -19,20 +19,21 @@ import ui
 import utils
 
 
+# TODO: automatically create event when poll closes
 # TODO: persistent logs for docker (and log DEBUG to file)
-# TODO: localised times -> where?
-# TODO: automatically create event
-# TODO: optional alternative end datetime for poll
-# TODO: improve config validation
+# TODO: log more information (command parameters and error types)
+# TODO: more reactions (Mischwald, Mau, Codenames, Leon)
+# TODO: role / colour choosing command
+# TODO: analysis and statistics command
 # TODO: fix calendar week bug
-# TODO: fix sunday 18:00 bug
-# TODO: suggest board games (BGG list?)
-# TODO: manually set activity
-# TODO: analysis and statistics
-# TODO: a bit of general cleanup
+# TODO: fix sunday 18:00 bug (if it even is one)
+# TODO: improve config validation
+# TODO: suggest board games command (BGG list?)
+# TODO: ask user for name on first join or on command?
+# TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 9, 1
+__VERSION__ = 3, 10, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -241,28 +242,39 @@ async def descend(interaction: discord.Interaction, server_id: str, role_id: str
 
 
 @tree.command(name="poll", description="poll_desc")
+@discord.app_commands.describe(hours="poll_hours")
 @discord.app_commands.guild_only()
-async def create_poll(interaction: discord.Interaction) -> None:
+async def create_poll(interaction: discord.Interaction, hours: typing.Optional[int] = None) \
+        -> None:
     """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
 
     Arguments:
         - interaction: the interaction being handled.
+        - hours: poll duration in hours.
     """
-    index: int
-    name: str
     utils.log_command(interaction)
-    poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format(
-        datetime.datetime.now().isocalendar().week + 1),
-        duration=utils.next_sunday_1800() - datetime.datetime.now(), multiple=True)
+    await interaction.response.defer()
+    # poll setup
+    duration: datetime.timedelta
+    if hours and 0 < hours <= 768:
+        duration = datetime.timedelta(hours=hours)
+    else:
+        duration = utils.next_sunday_1800() - datetime.datetime.now()
+    kw: int = datetime.datetime.now().isocalendar().week + 1
     monday: datetime.date = utils.next_monday()
     holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
-    for index, name in enumerate(CONFIG.weekday_names):
-        date: datetime.date = monday + datetime.timedelta(index)
-        poll_text: str = f"{name}, {date.strftime("%d.%m.")}"
+    day_names: list[str] = ["Montag", "Dienstag",
+                            "Mittwoch", "Donnerstag", "Freitag"]
+    # create actual poll
+    poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format_map({"kw": kw}),
+                                      duration=duration, multiple=True)
+    for i in range(5):
+        date: datetime.date = monday + datetime.timedelta(i)
+        poll_text: str = f"{day_names[i]}, {date.strftime("%d.%m.")}"
         if date.isoformat() in holidays:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
-    await interaction.response.send_message(poll=poll)
+    await interaction.followup.send(poll=poll)
 
 
 @tree.command(name="msg", description="msg_desc")

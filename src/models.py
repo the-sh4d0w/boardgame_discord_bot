@@ -15,6 +15,5 @@ class Config(pydantic.BaseModel):
     fallback_lang: str
     holiday_api_url: str
     question_text: str
-    weekday_names: list[str]
     games: list[str]
     reactions: list[Reaction]

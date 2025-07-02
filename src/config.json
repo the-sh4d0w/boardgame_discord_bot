@@ -1,14 +1,7 @@
 {
     "fallback_lang": "en-GB",
     "holiday_api_url": "https://feiertage-api.de/api/?nur_land=BY",
-    "question_text": "Welche Tage (vrmtl. ab 15:00 / 16:00 / 17:00) nächste Woche (KW{0}) passen für euch?",
-    "weekday_names": [
-        "Montag",
-        "Dienstag",
-        "Mittwoch",
-        "Donnerstag",
-        "Freitag"
-    ],
+    "question_text": "Welche Tage (vrmtl. ab 15:00 / 16:00 / 17:00) nächste Woche (KW{kw}) passen für euch?",
     "games": [
         "UNO",
         "Mischwald",

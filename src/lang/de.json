@@ -18,6 +18,7 @@
     "descend_fail": "Konnte nicht absteigen.",
     "poll": "umfrage",
     "poll_desc": "Starte eine Umfrage.",
+    "poll_hours": "Umfragendauer in Stunden (maximal 768).",
     "react": "reagieren",
     "react_success": "Folgende Reaktionen hinzugefügt: {reactions}",
     "react_fail": "Keine Reaktionen gefunden.",
