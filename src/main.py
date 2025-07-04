@@ -19,7 +19,6 @@ import ui
 import utils
 
 
-# TODO: more reactions (Mischwald, Mau, Codenames, Leon)
 # TODO: role / colour choosing command
 # TODO: automatically create event when poll closes
 # TODO: analysis and statistics command
@@ -31,7 +30,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 11, 0
+__VERSION__ = 3, 12, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables

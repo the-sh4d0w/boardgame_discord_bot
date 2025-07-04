@@ -16,7 +16,6 @@
         "Heimliche Herrschaft",
         "Next Station: Paris",
         "Challengers",
-        "Next Station: Tokyo",
         "Next Station: London"
     ],
     "reactions": [
@@ -34,6 +33,36 @@
                 "Beim_Baum_alternativ"
             ],
             "fallback_emoji": "🌳"
+        },
+        {
+            "phrase": "mischwald",
+            "guild_emojis": [
+                "Keep_your_city_clean_Mischwald"
+            ],
+            "fallback_emoji": "🌲"
+        },
+        {
+            "phrase": "mau",
+            "guild_emojis": [
+                "M_i_au",
+                "Anti_Mau_Aktion"
+            ],
+            "fallback_emoji": "🐈"
+        },
+        {
+            "phrase": "codenames",
+            "guild_emojis": [
+                "Codenames_HRRDN"
+            ],
+            "fallback_emoji": "👑"
+        },
+        {
+            "phrase": "leon",
+            "guild_emojis": [
+                "Mein_Name_ist",
+                "Leon_Drilling"
+            ],
+            "fallback_emoji": "🇱"
         }
     ]
 }
