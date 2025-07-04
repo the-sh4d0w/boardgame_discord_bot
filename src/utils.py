@@ -79,6 +79,7 @@ class DiscordHandler(logging.Handler):
                                       timestamp=datetime.datetime.fromtimestamp(record.created))
                 embed.set_author(name=record.levelname,
                                  icon_url=LOG_LEVEL_EMOJIS[record.levelno])
+                embed.add_field(name="Exception", value=f"```{error[0]}```")
                 embed.add_field(name="Traceback",
                                 value=f"```{error[1].with_traceback(error[2])}```")
             case _:  # INFO, WARNING, REACTION, DEBUG (below log level)

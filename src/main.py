@@ -19,11 +19,9 @@ import ui
 import utils
 
 
-# TODO: automatically create event when poll closes
-# TODO: persistent logs for docker (and log DEBUG to file)
-# TODO: log more information (command parameters and error types)
 # TODO: more reactions (Mischwald, Mau, Codenames, Leon)
 # TODO: role / colour choosing command
+# TODO: automatically create event when poll closes
 # TODO: analysis and statistics command
 # TODO: fix calendar week bug
 # TODO: fix sunday 18:00 bug (if it even is one)
@@ -33,7 +31,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 10, 0
+__VERSION__ = 3, 11, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -46,7 +44,9 @@ LOG_CHANNEL: int = int(typing.cast(str, os.environ.get("LOG_CHANNEL")))
 CONFIG_PATH: str = "config.json"
 CONFIG: models.Config = models.Config.model_validate_json(
     pathlib.Path(CONFIG_PATH).read_text(encoding="utf-8"))
-LOG_FILE: str = f"log_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log"
+LOG_PATH: str = "logs"
+LOG_FILE: pathlib.Path = pathlib.Path(
+    "/", LOG_PATH, f"log_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log")
 
 
 # bot setup
@@ -61,10 +61,13 @@ tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
 # logging setup
 log_queue: queue.Queue[discord.Embed] = queue.Queue()
 logger: logging.Logger = logging.getLogger("discord")
-logging.basicConfig(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S", style="{",
+discord_handler: utils.DiscordHandler = utils.DiscordHandler(log_queue)
+discord_handler.setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG, datefmt="%Y-%m-%d %H:%M:%S", style="{",
                     format="[{asctime}] [{levelname}] ({funcName}) {message}",
-                    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout),
-                              utils.DiscordHandler(log_queue)])
+                    handlers=[logging.FileHandler(LOG_FILE.resolve()),
+                              logging.StreamHandler(sys.stdout),
+                              discord_handler])
 
 
 # handling errors
@@ -142,6 +145,8 @@ async def on_message(message: discord.Message) -> None:
                     await message.add_reaction(emoji)
                 else:
                     await message.add_reaction(reaction.fallback_emoji)
+        # FIXME: Discord isn't behaving rational or predictable, so event creation on poll end
+        #        is postponed
 
 
 # tasks
