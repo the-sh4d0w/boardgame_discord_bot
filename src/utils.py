@@ -157,7 +157,7 @@ def get_holidays(url: str) -> dict[str, str]:
     return {v["datum"]: k for k, v in data.items()}
 
 
-def next_sunday_1800(date: datetime.date = datetime.date.today()) -> datetime.datetime:
+def next_sunday_1800(date: datetime.date) -> datetime.datetime:
     """Get next sunday 18:00 as datetime.datetime object.
 
     Arguments:
@@ -170,7 +170,7 @@ def next_sunday_1800(date: datetime.date = datetime.date.today()) -> datetime.da
                                      datetime.time(18))
 
 
-def next_monday(date: datetime.date = datetime.date.today()) -> datetime.date:
+def next_monday(date: datetime.date) -> datetime.date:
     """Get next monday as datetime.date object.
 
     Arguments:

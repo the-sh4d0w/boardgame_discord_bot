@@ -30,7 +30,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 12, 0
+__VERSION__ = 3, 12, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -259,13 +259,14 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
     utils.log_command(interaction)
     await interaction.response.defer()
     # poll setup
+    today: datetime.date = datetime.date.today()
     duration: datetime.timedelta
     if hours and 0 < hours <= 768:
         duration = datetime.timedelta(hours=hours)
     else:
-        duration = utils.next_sunday_1800() - datetime.datetime.now()
+        duration = utils.next_sunday_1800(today) - datetime.datetime.now()
     kw: int = datetime.datetime.now().isocalendar().week + 1
-    monday: datetime.date = utils.next_monday()
+    monday: datetime.date = utils.next_monday(today)
     holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
     day_names: list[str] = ["Montag", "Dienstag",
                             "Mittwoch", "Donnerstag", "Freitag"]
