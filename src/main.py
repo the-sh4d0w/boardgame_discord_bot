@@ -30,7 +30,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 12, 1
+__VERSION__ = 3, 13, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -393,6 +393,72 @@ async def delete_msg(interaction: discord.Interaction, message: discord.Message)
     else:
         await interaction.response.send_message(utils.translate("delete_fail", locale,
                                                                 bot=bot_id), ephemeral=True)
+
+
+@tree.context_menu(name="modview")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions()
+async def modview(interaction: discord.Interaction, member: discord.Member) -> None:
+    """Get modview info.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - member: the member that the context menu command was executed on.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    await interaction.response.defer(ephemeral=True)
+    messages: int = 0
+    links: int = 0
+    media: int = 0
+    for channel in member.guild.text_channels:
+        async for message in channel.history(limit=None):
+            if message.author.id == member.id:
+                messages += 1
+                if len(message.embeds) > 0 and message.embeds[0].url:
+                    links += 1
+                if len(message.attachments) > 0:
+                    media += 1
+    permissions:  list[str] = [perm[0] for perm in member.guild_permissions
+                               if perm[1]]
+    user_embed: discord.Embed = discord.Embed(colour=member.colour,
+                                              title=member.display_name)
+    user_embed.set_author(name=member.name, icon_url=member.display_avatar.url)
+    # activity information: messages, links, media
+    activity_embed: discord.Embed = discord.Embed(
+        colour=member.colour, title=utils.translate("modview_activity", locale))
+    activity_embed.add_field(name=utils.translate("modview_messages", locale),
+                             value=messages)
+    activity_embed.add_field(name=utils.translate("modview_links", locale),
+                             value=links)
+    activity_embed.add_field(name=utils.translate("modview_media", locale),
+                             value=media)
+    # permission information: amount, permissions
+    perm_embed: discord.Embed = discord.Embed(colour=member.colour,
+                                              title=utils.translate("modview_mod-perms", locale))
+    perm_embed.add_field(name=utils.translate("modview_amount-perms", locale),
+                         value=len(permissions))
+    perm_embed.add_field(name=utils.translate("modview_perms", locale),
+                         value=", ".join(permissions))
+    # role information: roles, top role
+    roles_embed: discord.Embed = discord.Embed(colour=member.colour,
+                                               title=utils.translate("modview_roles", locale))
+    roles_embed.add_field(name=utils.translate("modview_roles", locale), value=", ".join(map(
+        lambda r: r.mention if r.name != "@everyone" else r.name, member.roles)))
+    roles_embed.add_field(name=utils.translate("modview_top-role", locale),
+                          value=member.top_role.mention if member.top_role.name != "@everyone"
+                          else member.top_role.name)
+    # account information: verified, discord join date, server join date, join method?
+    account_embed: discord.Embed = discord.Embed(colour=member.colour,
+                                                 title=utils.translate("modview_account", locale))
+    account_embed.add_field(name=utils.translate("modview_verified", locale),
+                            value="❌" if member.pending else "✔")
+    account_embed.add_field(name=utils.translate("modview_discord-join", locale),
+                            value=member.created_at.date())
+    account_embed.add_field(name=utils.translate("modview_server-join", locale),
+                            value=typing.cast(datetime.datetime, member.joined_at).date())
+    await interaction.followup.send(embeds=[user_embed, activity_embed, perm_embed,
+                                            roles_embed, account_embed], ephemeral=True)
 
 
 if __name__ == "__main__":
