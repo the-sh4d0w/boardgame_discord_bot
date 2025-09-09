@@ -26,8 +26,10 @@ import utils
 # TODO: fix sunday 18:00 bug (if it even is one)
 # TODO: improve config validation
 # TODO: suggest board games command (BGG list?)
-# TODO: ask user for name on first join or on command?
+# TODO: ask user for name on first join
 # TODO: a bit of general cleanup and order
+# TODO: quote command?
+# TODO: weekend option for /poll?
 
 
 __VERSION__ = 3, 13, 0
