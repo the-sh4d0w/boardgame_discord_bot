@@ -7,48 +7,22 @@ import discord
 import utils
 
 
-class TextModal(discord.ui.Modal):
-    """Text modal."""
-
-    def __init__(self, title: str, label: str, owner: int) -> None:
-        """Initialise the modal.
-
-        Arguments:
-            - title: modal title.
-            - label: text input label.
-            - owner: the user id of the owner.
-        """
-        super().__init__(title=title)
-        self.owner: int = owner
-        self.add_item(discord.ui.TextInput(label=label))
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception) \
-            -> None:  # pylint:disable=arguments-differ
-        """Do stuff on submit.
-
-        Arguments:
-            - interaction: the interaction being handled.
-            - error: the error that occurred.
-        """
-        locale: str = interaction.locale.value
-        await interaction.response.send_message(utils.translate("error", locale, error=error,
-                                                                OWNER=self.owner), ephemeral=True)
-
-
-class ResponseModal(TextModal):
+class ResponseModal(discord.ui.Modal):
     """Response modal."""
 
-    def __init__(self, title: str, label: str, owner: int, message: discord.Message) -> None:
+    def __init__(self, locale: str, owner: int, message: discord.Message) -> None:
         """Initialise the modal.
 
         Arguments:
-            - title: modal title.
-            - label: text input label.
+            - locale: the locale to translate to.
             - owner: the user id of the owner.
             - message: message to respond to.
         """
-        super().__init__(title, label, owner)
+        super().__init__(title=utils.translate("respond_title", locale))
+        self.owner: int = owner
         self.message: discord.Message = message
+        self.add_item(discord.ui.TextInput(
+            label=utils.translate("respond_label", locale)))
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -63,21 +37,35 @@ class ResponseModal(TextModal):
         await interaction.response.send_message(utils.translate("respond_submit", locale,
                                                                 text=text), ephemeral=True)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
 
-class MessageModal(TextModal):
+        Arguments:
+            - interaction: the interaction being handled.
+            - error: the error that occurred.
+        """
+        locale: str = interaction.locale.value
+        await interaction.response.send_message(utils.translate("error", locale, error=error,
+                                                                OWNER=self.owner), ephemeral=True)
+
+
+class MessageModal(discord.ui.Modal):
     """Message modal."""
 
-    def __init__(self, title: str, label: str, owner: int, channel: discord.TextChannel) -> None:
+    def __init__(self, locale: str, owner: int, channel: discord.TextChannel) -> None:
         """Initialise the modal.
 
         Arguments:
-            - title: modal title.
-            - label: text input label.
+            - locale: the locale to translate to.
             - owner: the user id of the owner.
             - channel: the channel to message.
         """
-        super().__init__(title, label, owner)
+        super().__init__(title=utils.translate("msg_title", locale))
+        self.owner: int = owner
         self.channel: discord.TextChannel = channel
+        self.add_item(discord.ui.TextInput(
+            label=utils.translate("msg_label", locale)))
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -92,26 +80,37 @@ class MessageModal(TextModal):
         await interaction.response.send_message(utils.translate("msg_submit", locale,
                                                                 text=text), ephemeral=True)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
+
+        Arguments:
+            - interaction: the interaction being handled.
+            - error: the error that occurred.
+        """
+        locale: str = interaction.locale.value
+        await interaction.response.send_message(utils.translate("error", locale, error=error,
+                                                                OWNER=self.owner), ephemeral=True)
+
 
 class QuoteModal(discord.ui.Modal):
     """Quote modal."""
 
-    def __init__(self, title: str, text_label: str, source_label: str, owner: int,
-                 channel: discord.TextChannel) -> None:
+    def __init__(self, locale: str, owner: int, channel: discord.TextChannel) -> None:
         """Initialise the modal.
 
         Arguments:
-            - title: modal title.
-            - text_label: text text input label.
-            - source_label: source text text input label.
+            - locale: the locale to translate to.
             - owner: the user id of the owner.
             - channel: the channel to send the quote to.
         """
-        super().__init__(title=title)
+        super().__init__(title=utils.translate("quote_title", locale))
         self.owner: int = owner
         self.channel: discord.TextChannel = channel
-        self.add_item(discord.ui.TextInput(label=text_label))
-        self.add_item(discord.ui.TextInput(label=source_label))
+        self.add_item(discord.ui.TextInput(
+            label=utils.translate("quote_text", locale)))
+        self.add_item(discord.ui.TextInput(
+            label=utils.translate("quote_source", locale)))
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -130,3 +129,15 @@ class QuoteModal(discord.ui.Modal):
         await self.channel.send(embed=embed)
         await interaction.response.send_message(utils.translate("quote_submit", locale, text=text,
                                                                 source=source), ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) \
+            -> None:  # pylint:disable=arguments-differ
+        """Do stuff on submit.
+
+        Arguments:
+            - interaction: the interaction being handled.
+            - error: the error that occurred.
+        """
+        locale: str = interaction.locale.value
+        await interaction.response.send_message(utils.translate("error", locale, error=error,
+                                                                OWNER=self.owner), ephemeral=True)

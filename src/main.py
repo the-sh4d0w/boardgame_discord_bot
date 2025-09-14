@@ -19,7 +19,6 @@ import ui
 import utils
 
 
-# TODO: improve ui localisation
 # TODO: role / colour choosing command
 # TODO: automatically create event when poll closes
 # TODO: analysis and statistics command
@@ -32,7 +31,7 @@ import utils
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 14, 0
+__VERSION__ = 3, 14, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -295,11 +294,9 @@ async def send_message(interaction: discord.Interaction) -> None:
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
-    title: str = utils.translate("msg_title", locale)
-    label: str = utils.translate("msg_label", locale)
     channel: discord.TextChannel = typing.cast(discord.TextChannel,
                                                interaction.channel)
-    await interaction.response.send_modal(ui.MessageModal(title, label, OWNER, channel))
+    await interaction.response.send_modal(ui.MessageModal(locale, OWNER, channel))
 
 
 @tree.command(name="quote", description="quote_desc")
@@ -314,11 +311,7 @@ async def quote(interaction: discord.Interaction, channel: discord.TextChannel) 
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
-    title: str = utils.translate("quote_title", locale)
-    text_label: str = utils.translate("quote_text", locale)
-    source_label: str = utils.translate("quote_source", locale)
-    await interaction.response.send_modal(ui.QuoteModal(title, text_label, source_label,
-                                                        OWNER, channel))
+    await interaction.response.send_modal(ui.QuoteModal(locale, OWNER, channel))
 
 
 # message commands
@@ -359,9 +352,7 @@ async def respond(interaction: discord.Interaction, message: discord.Message) ->
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
-    title: str = utils.translate("respond_title", locale)
-    label: str = utils.translate("respond_label", locale)
-    await interaction.response.send_modal(ui.ResponseModal(title, label, OWNER, message))
+    await interaction.response.send_modal(ui.ResponseModal(locale, OWNER, message))
 
 
 @tree.context_menu(name="close")
