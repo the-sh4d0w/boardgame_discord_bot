@@ -11,6 +11,7 @@ the days of the week (and possible holidays) as poll options.
 
 ### Slash Commands
 - `/message`: Send a message as the bot.
+- `/quote`: Send a nicely formatted quote.
 
 ### Message Commands
 - `/react`: React to a message as the bot. Copies the reaction(s) of the user who used the command.

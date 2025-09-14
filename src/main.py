@@ -19,6 +19,7 @@ import ui
 import utils
 
 
+# TODO: improve ui localisation
 # TODO: role / colour choosing command
 # TODO: automatically create event when poll closes
 # TODO: analysis and statistics command
@@ -28,11 +29,10 @@ import utils
 # TODO: suggest board games command (BGG list?)
 # TODO: ask user for name on first join
 # TODO: a bit of general cleanup and order
-# TODO: quote command?
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 13, 0
+__VERSION__ = 3, 14, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -170,7 +170,7 @@ async def log_task() -> None:
         await log_channel.send(embed=embed)
 
 
-# commands
+# slash commands
 @tree.command(name="sync", description="sync_desc")
 @discord.app_commands.dm_only()
 @utils.check_if_owner(OWNER)
@@ -302,7 +302,26 @@ async def send_message(interaction: discord.Interaction) -> None:
     await interaction.response.send_modal(ui.MessageModal(title, label, OWNER, channel))
 
 
-# context menu commands
+@tree.command(name="quote", description="quote_desc")
+@discord.app_commands.describe(channel="quote_channel")
+@discord.app_commands.guild_only()
+async def quote(interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+    """Quote.
+
+    Arguments:
+        - interaction: the interaction being handled.
+        - channel: the channel to send the quote in.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    title: str = utils.translate("quote_title", locale)
+    text_label: str = utils.translate("quote_text", locale)
+    source_label: str = utils.translate("quote_source", locale)
+    await interaction.response.send_modal(ui.QuoteModal(title, text_label, source_label,
+                                                        OWNER, channel))
+
+
+# message commands
 @tree.context_menu(name="react")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
@@ -397,6 +416,7 @@ async def delete_msg(interaction: discord.Interaction, message: discord.Message)
                                                                 bot=bot_id), ephemeral=True)
 
 
+# user commands
 @tree.context_menu(name="modview")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
