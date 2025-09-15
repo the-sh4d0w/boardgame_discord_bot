@@ -21,8 +21,8 @@ class ResponseModal(discord.ui.Modal):
         super().__init__(title=utils.translate("respond_title", locale))
         self.owner: int = owner
         self.message: discord.Message = message
-        self.add_item(discord.ui.TextInput(
-            label=utils.translate("respond_label", locale)))
+        self.add_item(discord.ui.TextInput(label=utils.translate("respond_label", locale),
+                                           style=discord.TextStyle.long))
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -64,8 +64,8 @@ class MessageModal(discord.ui.Modal):
         super().__init__(title=utils.translate("msg_title", locale))
         self.owner: int = owner
         self.channel: discord.TextChannel = channel
-        self.add_item(discord.ui.TextInput(
-            label=utils.translate("msg_label", locale)))
+        self.add_item(discord.ui.TextInput(label=utils.translate("msg_label", locale),
+                                           style=discord.TextStyle.long))
 
     async def on_submit(self, interaction: discord.Interaction) \
             -> None:  # pylint:disable=arguments-differ
@@ -107,8 +107,8 @@ class QuoteModal(discord.ui.Modal):
         super().__init__(title=utils.translate("quote_title", locale))
         self.owner: int = owner
         self.channel: discord.TextChannel = channel
-        self.add_item(discord.ui.TextInput(
-            label=utils.translate("quote_text", locale)))
+        self.add_item(discord.ui.TextInput(label=utils.translate("quote_text", locale),
+                                           style=discord.TextStyle.long))
         self.add_item(discord.ui.TextInput(
             label=utils.translate("quote_source", locale)))
 

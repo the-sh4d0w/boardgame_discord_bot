@@ -31,7 +31,7 @@ import utils
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 14, 1
+__VERSION__ = 3, 14, 2
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
