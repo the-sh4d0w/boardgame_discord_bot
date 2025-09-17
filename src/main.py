@@ -20,7 +20,6 @@ import utils
 
 
 # TODO: role / colour choosing command
-# TODO: automatically create event when poll closes
 # TODO: analysis and statistics command
 # TODO: fix calendar week bug
 # TODO: fix sunday 18:00 bug (if it even is one)
@@ -31,7 +30,7 @@ import utils
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 14, 2
+__VERSION__ = 3, 15, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -135,6 +134,7 @@ async def on_message(message: discord.Message) -> None:
     """
     reaction: models.Reaction
     message_text: str = message.content.lower()
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
     if message.guild:
         for reaction in CONFIG.reactions:
             if reaction.phrase in message_text:
@@ -145,8 +145,26 @@ async def on_message(message: discord.Message) -> None:
                     await message.add_reaction(emoji)
                 else:
                     await message.add_reaction(reaction.fallback_emoji)
-        # FIXME: Discord isn't behaving rational or predictable, so event creation on poll end
-        #        is postponed
+        if message.type == discord.MessageType.poll_result and message.author.id == bot_id:
+            # check if we have only one poll result
+            if len(message.embeds[0].fields) > 3:
+                # cursed, but it works
+                kw: str = typing.cast(str, message.embeds[0].fields[0].value
+                                      ).split("(")[-1].split(")")[0]
+                logging.info("Created scheduled event %s.",
+                             CONFIG.event_title.format_map({"kw": kw}))
+                start_time: datetime.datetime = datetime.datetime.strptime(typing.cast(
+                    str, message.embeds[0].fields[-1].value).split()[1], "%d.%m.").astimezone(
+                        CONFIG.timezone).replace(year=datetime.date.today().year,
+                                                 hour=16, minute=0)
+                end_time: datetime.datetime = start_time.replace(hour=22)
+                await message.guild.create_scheduled_event(
+                    name=CONFIG.event_title.format_map({"kw": kw}),
+                    location=CONFIG.event_location, description=CONFIG.event_description,
+                    image=CONFIG.event_cover_image.read_bytes(),
+                    start_time=start_time, end_time=end_time,
+                    entity_type=discord.EntityType.external,
+                    privacy_level=discord.PrivacyLevel.guild_only)
 
 
 # tasks

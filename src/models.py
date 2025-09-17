@@ -1,5 +1,8 @@
 """Pydantic models to represent data."""
 
+import pathlib
+import zoneinfo
+
 import pydantic
 
 
@@ -13,7 +16,12 @@ class Reaction(pydantic.BaseModel):
 class Config(pydantic.BaseModel):
     """Config model."""
     fallback_lang: str
+    timezone: zoneinfo.ZoneInfo
     holiday_api_url: str
     question_text: str
+    event_title: str
+    event_location: str
+    event_description: str
+    event_cover_image: pathlib.Path
     games: list[str]
     reactions: list[Reaction]
