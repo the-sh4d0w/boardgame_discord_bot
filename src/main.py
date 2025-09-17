@@ -28,7 +28,7 @@ import utils
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 15, 1
+__VERSION__ = 3, 15, 2
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -152,9 +152,8 @@ async def on_message(message: discord.Message) -> None:
                 logging.info("Created scheduled event %s.",
                              CONFIG.event_title.format_map({"kw": kw}))
                 start_time: datetime.datetime = datetime.datetime.strptime(typing.cast(
-                    str, message.embeds[0].fields[-1].value).split()[1], "%d.%m.").astimezone(
-                        CONFIG.timezone).replace(year=datetime.date.today().year,
-                                                 hour=16, minute=0)
+                    str, message.embeds[0].fields[-1].value).split()[1], "%d.%m.%Y").astimezone(
+                        CONFIG.timezone).replace(hour=16, minute=0)
                 end_time: datetime.datetime = start_time.replace(hour=22)
                 await message.guild.create_scheduled_event(
                     name=CONFIG.event_title.format_map({"kw": kw}),
@@ -282,7 +281,8 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
         duration = datetime.timedelta(hours=hours)
     else:
         duration = utils.next_sunday_1800(today) - datetime.datetime.now()
-    kw: int = (datetime.datetime.now().isocalendar().week + 1) % 52
+    kw: int = (datetime.datetime.now() +
+               datetime.timedelta(days=7)).isocalendar().week
     monday: datetime.date = utils.next_monday(today)
     holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
     day_names: list[str] = ["Montag", "Dienstag",
@@ -292,7 +292,7 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
                                       duration=duration, multiple=True)
     for i in range(5):
         date: datetime.date = monday + datetime.timedelta(i)
-        poll_text: str = f"{day_names[i]}, {date.strftime("%d.%m.")}"
+        poll_text: str = f"{day_names[i]}, {date.strftime("%d.%m.%Y")}"
         if date.isoformat() in holidays:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)

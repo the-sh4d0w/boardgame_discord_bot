@@ -2,7 +2,7 @@
     "fallback_lang": "en-GB",
     "timezone": "Europe/Berlin",
     "holiday_api_url": "https://feiertage-api.de/api/?nur_land=BY",
-    "question_text": "Welche Tage (vrmtl. ab 16:00) nächste Woche (KW{kw}) passen für euch?",
+    "question_text": "Welche Tage (vrmtl. ab 16:00) nächste Woche (KW {kw}) passen für euch?",
     "event_title": "Spieleabend ({kw})",
     "event_location": "Boltzmannstraße 3, 85748 Garching",
     "event_description": "Unser wöchentlicher Spieleabend, im [MI](https://maps.app.goo.gl/xPqq3pmLWf6ddD3E7).",
