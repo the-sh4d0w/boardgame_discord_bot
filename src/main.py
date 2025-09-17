@@ -21,8 +21,6 @@ import utils
 
 # TODO: role / colour choosing command
 # TODO: analysis and statistics command
-# TODO: fix calendar week bug
-# TODO: fix sunday 18:00 bug (if it even is one)
 # TODO: improve config validation
 # TODO: suggest board games command (BGG list?)
 # TODO: ask user for name on first join
@@ -30,7 +28,7 @@ import utils
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 15, 0
+__VERSION__ = 3, 15, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -284,7 +282,7 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
         duration = datetime.timedelta(hours=hours)
     else:
         duration = utils.next_sunday_1800(today) - datetime.datetime.now()
-    kw: int = datetime.datetime.now().isocalendar().week + 1
+    kw: int = (datetime.datetime.now().isocalendar().week + 1) % 52
     monday: datetime.date = utils.next_monday(today)
     holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
     day_names: list[str] = ["Montag", "Dienstag",
@@ -321,7 +319,7 @@ async def send_message(interaction: discord.Interaction) -> None:
 @discord.app_commands.describe(channel="quote_channel")
 @discord.app_commands.guild_only()
 async def quote(interaction: discord.Interaction, channel: discord.TextChannel) -> None:
-    """Quote.
+    """Send formatted quote.
 
     Arguments:
         - interaction: the interaction being handled.
