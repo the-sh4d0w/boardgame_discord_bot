@@ -19,16 +19,19 @@ import ui
 import utils
 
 
+# TODO: moderation commands (ban, warn, kick, ...)
+# TODO: game night activity status
 # TODO: role / colour choosing command
 # TODO: analysis and statistics command
 # TODO: improve config validation
+# TODO: ask everyone who voted for the winning day if they're here when the event starts
 # TODO: suggest board games command (BGG list?)
 # TODO: ask user for name on first join
 # TODO: a bit of general cleanup and order
 # TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 15, 2
+__VERSION__ = 3, 16, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -272,6 +275,11 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
         - interaction: the interaction being handled.
         - hours: poll duration in hours.
     """
+    # FIXME: distinguish between weekend an no weekend
+    # -> add weekend bool option
+    # -> only first five days for non-weekend polls
+    # -> all otherwise
+    # -> move day names somewhere else (maybe get automatically)
     utils.log_command(interaction)
     await interaction.response.defer()
     # poll setup
@@ -316,17 +324,17 @@ async def send_message(interaction: discord.Interaction) -> None:
 
 
 @tree.command(name="quote", description="quote_desc")
-@discord.app_commands.describe(channel="quote_channel")
 @discord.app_commands.guild_only()
-async def quote(interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+async def quote(interaction: discord.Interaction) -> None:
     """Send formatted quote.
 
     Arguments:
         - interaction: the interaction being handled.
-        - channel: the channel to send the quote in.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
+    channel: discord.TextChannel = typing.cast(discord.TextChannel,
+                                               interaction.channel)
     await interaction.response.send_modal(ui.QuoteModal(locale, OWNER, channel))
 
 
