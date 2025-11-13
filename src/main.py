@@ -29,7 +29,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 18, 1
+__VERSION__ = 3, 18, 2
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -231,9 +231,8 @@ async def sync(interaction: discord.Interaction) -> None:
 
 
 @tree.command(name="ascend", description="ascend_desc")
-@discord.app_commands.describe(server_id="ascend_server-id")
-@discord.app_commands.describe(role_id="ascend_role-id")
-@discord.app_commands.describe(user_id="ascend_user-id")
+@discord.app_commands.describe(server_id="ascend_server-id", role_id="ascend_role-id",
+                               user_id="ascend_user-id")
 @discord.app_commands.dm_only()
 @utils.check_if_owner(OWNER)
 async def ascend(interaction: discord.Interaction, server_id: str, role_id: str,
@@ -259,9 +258,8 @@ async def ascend(interaction: discord.Interaction, server_id: str, role_id: str,
 
 
 @tree.command(name="descend", description="descend_desc")
-@discord.app_commands.describe(server_id="descend_server-id")
-@discord.app_commands.describe(role_id="descend_role-id")
-@discord.app_commands.describe(user_id="descend_user-id")
+@discord.app_commands.describe(server_id="descend_server-id", role_id="descend_role-id",
+                               user_id="descend_user-id")
 @discord.app_commands.dm_only()
 @utils.check_if_owner(OWNER)
 async def descend(interaction: discord.Interaction, server_id: str, role_id: str,
@@ -287,7 +285,7 @@ async def descend(interaction: discord.Interaction, server_id: str, role_id: str
 
 
 @tree.command(name="poll", description="poll_desc")
-@discord.app_commands.describe(hours="poll_hours")
+@discord.app_commands.describe(hours="poll_hours", weekend="poll_weekend")
 @discord.app_commands.guild_only()
 async def create_poll(interaction: discord.Interaction, hours: typing.Optional[int] = None,
                       weekend: typing.Optional[bool] = False) -> None:

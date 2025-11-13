@@ -19,6 +19,7 @@
     "poll": "poll",
     "poll_desc": "Start a poll.",
     "poll_hours": "Poll duration in hours (maximum 768).",
+    "poll_weekend": "Add weekend as options if True.",
     "react": "react",
     "react_success": "The following reactions were added: {reactions}",
     "react_fail": "No reactions found.",

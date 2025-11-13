@@ -19,6 +19,7 @@
     "poll": "umfrage",
     "poll_desc": "Starte eine Umfrage.",
     "poll_hours": "Umfragendauer in Stunden (maximal 768).",
+    "poll_weekend": "Fügt Wochenden als Optionen hinzu, falls True.",
     "react": "reagieren",
     "react_success": "Folgende Reaktionen hinzugefügt: {reactions}",
     "react_fail": "Keine Reaktionen gefunden.",
