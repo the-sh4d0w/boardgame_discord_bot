@@ -19,6 +19,7 @@ class Config(pydantic.BaseModel):
     timezone: zoneinfo.ZoneInfo
     holiday_api_url: str
     question_text: str
+    day_names: list[str]
     event_title: str
     event_location: str
     event_description: str

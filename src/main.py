@@ -28,10 +28,9 @@ import utils
 # TODO: suggest board games command (BGG list?)
 # TODO: ask user for name on first join
 # TODO: a bit of general cleanup and order
-# TODO: weekend option for /poll?
 
 
-__VERSION__ = 3, 16, 0
+__VERSION__ = 3, 17, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -267,19 +266,15 @@ async def descend(interaction: discord.Interaction, server_id: str, role_id: str
 @tree.command(name="poll", description="poll_desc")
 @discord.app_commands.describe(hours="poll_hours")
 @discord.app_commands.guild_only()
-async def create_poll(interaction: discord.Interaction, hours: typing.Optional[int] = None) \
-        -> None:
+async def create_poll(interaction: discord.Interaction, hours: typing.Optional[int] = None,
+                      weekend: typing.Optional[bool] = False) -> None:
     """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
 
     Arguments:
         - interaction: the interaction being handled.
         - hours: poll duration in hours.
+        - weekend: include the weekend as options if True.
     """
-    # FIXME: distinguish between weekend an no weekend
-    # -> add weekend bool option
-    # -> only first five days for non-weekend polls
-    # -> all otherwise
-    # -> move day names somewhere else (maybe get automatically)
     utils.log_command(interaction)
     await interaction.response.defer()
     # poll setup
@@ -293,14 +288,13 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
                datetime.timedelta(days=7)).isocalendar().week
     monday: datetime.date = utils.next_monday(today)
     holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
-    day_names: list[str] = ["Montag", "Dienstag",
-                            "Mittwoch", "Donnerstag", "Freitag"]
     # create actual poll
     poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format_map({"kw": kw}),
                                       duration=duration, multiple=True)
-    for i in range(5):
+    # it works...
+    for i in range(7 - (not weekend) * 2):
         date: datetime.date = monday + datetime.timedelta(i)
-        poll_text: str = f"{day_names[i]}, {date.strftime("%d.%m.%Y")}"
+        poll_text: str = f"{CONFIG.day_names[i]}, {date.strftime("%d.%m.%Y")}"
         if date.isoformat() in holidays:
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
