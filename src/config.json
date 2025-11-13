@@ -79,5 +79,6 @@
             ],
             "fallback_emoji": "🇱"
         }
-    ]
+    ],
+    "game_night_active": false
 }

@@ -20,7 +20,6 @@ import utils
 
 
 # TODO: moderation commands (ban, warn, kick, ...)
-# TODO: game night activity status
 # TODO: role / colour choosing command
 # TODO: analysis and statistics command
 # TODO: improve config validation
@@ -30,7 +29,7 @@ import utils
 # TODO: a bit of general cleanup and order
 
 
-__VERSION__ = 3, 17, 0
+__VERSION__ = 3, 18, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -166,12 +165,36 @@ async def on_message(message: discord.Message) -> None:
                     privacy_level=discord.PrivacyLevel.guild_only)
 
 
+@bot.event
+async def on_scheduled_event_update(before: discord.ScheduledEvent, after: discord.ScheduledEvent) \
+        -> None:
+    """Do stuff on scheduled event update.
+
+    Arguments:
+        - before: scheduled event before update.
+        - after: scheduled event after update.
+    """
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
+    if after.guild and after.creator and after.creator.id == bot_id:
+        if before.status == discord.EventStatus.scheduled \
+                and after.status == discord.EventStatus.active:
+            CONFIG.game_night_active = True
+        elif before.status == discord.EventStatus.active \
+                and after.status == discord.EventStatus.completed:
+            CONFIG.game_night_active = False
+
+
 # tasks
-@discord.ext.tasks.loop(minutes=30)
+@discord.ext.tasks.loop(minutes=15)
 async def activity_task() -> None:
     """Update activity."""
-    activity: discord.BaseActivity = discord.Game(
-        name=random.choice(CONFIG.games))
+    activity: discord.BaseActivity
+    if CONFIG.game_night_active:
+        activity = discord.Game(name="Spieleabend")
+    else:
+        random.seed(datetime.datetime.now().isoformat())
+        activity = discord.Game(
+            name=random.choice(CONFIG.games))
     utils.log_activity(activity)
     await bot.change_presence(activity=activity)
 

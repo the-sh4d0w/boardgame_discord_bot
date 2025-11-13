@@ -26,3 +26,4 @@ class Config(pydantic.BaseModel):
     event_cover_image: pathlib.Path
     games: list[str]
     reactions: list[Reaction]
+    game_night_active: bool
