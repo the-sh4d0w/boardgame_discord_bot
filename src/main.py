@@ -19,8 +19,6 @@ import ui
 import utils
 
 
-# TODO: basic bot info in discord description (version, ...)
-# TODO: moderation commands (ban, warn, kick, ...)
 # TODO: warn command with counter -> needs database
 # TODO: role / colour choosing command
 # TODO: analysis and statistics command
@@ -32,7 +30,7 @@ import utils
 # TODO: improve command descriptions
 
 
-__VERSION__ = 3, 19, 0
+__VERSION__ = 3, 20, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -124,6 +122,8 @@ async def on_ready() -> None:
         log_task.start()
     # called multiple times; not only when first started
     text: str = f"Bot running version {".".join(map(str, __VERSION__))}."
+    if bot.application:
+        await bot.application.edit(description=f"v{".".join(map(str, __VERSION__))}")
     logging.info(text)
 
 
