@@ -30,7 +30,7 @@ import utils
 # TODO: improve command descriptions
 
 
-__VERSION__ = 3, 20, 0
+__VERSION__ = 3, 21, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -159,13 +159,15 @@ async def on_message(message: discord.Message) -> None:
                     str, message.embeds[0].fields[-1].value).split()[1], "%d.%m.%Y").astimezone(
                         CONFIG.timezone).replace(hour=16, minute=0)
                 end_time: datetime.datetime = start_time.replace(hour=22)
-                await message.guild.create_scheduled_event(
+                event: discord.ScheduledEvent = await message.guild.create_scheduled_event(
                     name=CONFIG.event_title.format_map({"kw": kw}),
                     location=CONFIG.event_location, description=CONFIG.event_description,
                     image=CONFIG.event_cover_image.read_bytes(),
                     start_time=start_time, end_time=end_time,
                     entity_type=discord.EntityType.external,
                     privacy_level=discord.PrivacyLevel.guild_only)
+                await message.channel.send("Ergebnis der Umfrage war "
+                                           f"<t:{int(start_time.timestamp())}:D>.\n{event.url}")
 
 
 @bot.event
