@@ -153,7 +153,11 @@ def get_holidays(url: str) -> dict[str, str]:
     Returns:
         Holidays with date and name.
     """
-    data: dict[str, dict[str, str]] = requests.get(url=url, timeout=10).json()
+    today: datetime.date = datetime.date.today()
+    data: dict[str, dict[str, str]] = requests.get(url=url + f"&jahr={today.year}",
+                                                   timeout=10).json()
+    data.update(requests.get(url=url + f"&jahr={today.year+1}",
+                             timeout=10).json())
     return {v["datum"]: k for k, v in data.items()}
 
 
