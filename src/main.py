@@ -30,7 +30,7 @@ import utils
 # TODO: improve command descriptions
 
 
-__VERSION__ = 3, 21, 1
+__VERSION__ = 3, 22, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -325,6 +325,34 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
             poll_text += f" ({holidays[date.isoformat()]})"
         poll.add_answer(text=poll_text)
     await interaction.followup.send(poll=poll)
+
+
+@tree.command(name="event", description="event_desc")
+@discord.app_commands.describe(date="event_date")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions()
+async def create_event(interaction: discord.Interaction, date: str) -> None:
+    """Create a scheduled event."""
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    try:
+        start_time: datetime.datetime = datetime.datetime.fromisoformat(date).astimezone(
+            CONFIG.timezone).replace(hour=16, minute=0)
+        end_time: datetime.datetime = start_time.replace(hour=22)
+        kw: int = start_time.isocalendar().week
+        if interaction.guild:
+            event: discord.ScheduledEvent = await interaction.guild.create_scheduled_event(
+                name=CONFIG.event_title.format_map({"kw": f"KW {kw}"}),
+                location=CONFIG.event_location, description=CONFIG.event_description,
+                image=CONFIG.event_cover_image.read_bytes(),
+                start_time=start_time, end_time=end_time,
+                entity_type=discord.EntityType.external,
+                privacy_level=discord.PrivacyLevel.guild_only)
+            await interaction.response.send_message(f"Event für <t:{int(start_time.timestamp())}:D>"
+                                                    f" wurde erstellt.\n{event.url}")
+    except ValueError:
+        await interaction.response.send_message(utils.translate("event_error", locale),
+                                                ephemeral=True)
 
 
 @tree.command(name="msg", description="msg_desc")
