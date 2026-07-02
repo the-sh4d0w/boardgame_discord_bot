@@ -30,7 +30,7 @@ import utils
 # TODO: improve command descriptions
 
 
-__VERSION__ = 3, 22, 0
+__VERSION__ = 3, 22, 1
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
