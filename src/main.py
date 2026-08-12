@@ -30,7 +30,8 @@ import utils
 # TODO: improve command descriptions
 
 
-__VERSION__ = 3, 22, 1
+# FIXME: somehow read this from pyproject.toml
+__VERSION__ = 4, 0, 0
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables

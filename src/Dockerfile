@@ -1,6 +1,10 @@
-FROM python:3.12
+FROM astral/uv:python3.14-alpine
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY .python-version pyproject.toml uv.lock ./
+
+RUN uv sync
+
 COPY . .
-CMD ["python", "main.py"]
+
+CMD ["uv", "run", "main.py"]
