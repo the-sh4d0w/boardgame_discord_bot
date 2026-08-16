@@ -7,6 +7,7 @@ import pathlib
 import queue
 import random
 import sys
+import tomllib
 import typing
 
 import discord
@@ -31,7 +32,9 @@ import utils
 
 
 # FIXME: somehow read this from pyproject.toml
-__VERSION__ = 4, 0, 0
+pyproject_toml: dict[str, typing.Any] = tomllib.loads(
+    pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
+__VERSION__ = pyproject_toml["project"]["version"]
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -122,9 +125,9 @@ async def on_ready() -> None:
     if not log_task.is_running():
         log_task.start()
     # called multiple times; not only when first started
-    text: str = f"Bot running version {".".join(map(str, __VERSION__))}."
+    text: str = f"Bot running version {__VERSION__}."
     if bot.application:
-        await bot.application.edit(description=f"v{".".join(map(str, __VERSION__))}")
+        await bot.application.edit(description=f"v{__VERSION__}")
     logging.info(text)
 
 
