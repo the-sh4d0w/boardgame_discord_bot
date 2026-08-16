@@ -19,7 +19,6 @@ import models
 import ui
 import utils
 
-
 # TODO: warn command with counter -> needs database
 # TODO: role / colour choosing command
 # TODO: analysis and statistics command
@@ -31,10 +30,9 @@ import utils
 # TODO: improve command descriptions
 
 
-# FIXME: somehow read this from pyproject.toml
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
     pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
-__VERSION__ = pyproject_toml["project"]["version"]
+__VERSION__: str = pyproject_toml["project"]["version"]
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
 # load environment variables
@@ -62,6 +60,7 @@ tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False))
 
 # logging setup
+dev: bool = False
 log_queue: queue.Queue[discord.Embed] = queue.Queue()
 logger: logging.Logger = logging.getLogger("discord")
 discord_handler: utils.DiscordHandler = utils.DiscordHandler(log_queue)
@@ -125,9 +124,9 @@ async def on_ready() -> None:
     if not log_task.is_running():
         log_task.start()
     # called multiple times; not only when first started
-    text: str = f"Bot running version {__VERSION__}."
+    text: str = f"Bot running version {__VERSION__ + (" (dev)" if dev else "")}."
     if bot.application:
-        await bot.application.edit(description=f"v{__VERSION__}")
+        await bot.application.edit(description=f"v{__VERSION__ + (" (dev)" if dev else "")}")
     logging.info(text)
 
 
@@ -621,4 +620,5 @@ async def modview(interaction: discord.Interaction, member: discord.Member) -> N
 
 
 if __name__ == "__main__":
+    dev = len(sys.argv) > 1 and sys.argv[1] == "--dev"
     bot.run(token=TOKEN, log_handler=None)
