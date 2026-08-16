@@ -96,7 +96,7 @@ class BoardgameTranslator(discord.app_commands.Translator):
     """Boardgame translator."""
 
     async def translate(self, string: discord.app_commands.locale_str, locale: discord.Locale,
-                        context: discord.app_commands.TranslationContext | None) -> str | None:
+                        context) -> str | None: # type: ignore
         """Translate the string to the given locale.
 
         Arguments:

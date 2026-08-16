@@ -12,20 +12,15 @@ import typing
 
 import discord
 import discord.app_commands
-import discord.ext.tasks
+import discord.ext.tasks  # pyright: ignore[reportMissingTypeStubs]
 import dotenv
 
 import models
 import ui
 import utils
 
-# TODO: warn command with counter -> needs database
-# TODO: role / colour choosing command
 # TODO: analysis and statistics command
-# TODO: improve config validation
-# TODO: ask everyone who voted for the winning day if they're here when the event starts
-# TODO: suggest board games command (BGG list?)
-# TODO: ask user for name on first join
+# TODO: improve config validation -> what sepcifically
 # TODO: a bit of general cleanup and order
 # TODO: improve command descriptions
 
@@ -83,7 +78,7 @@ async def on_error(interaction: discord.Interaction,
         - error: the error being raised.
     """
     locale: str = interaction.locale.value
-    send: typing.Callable = interaction.followup.send if interaction.response.is_done() \
+    send = interaction.followup.send if interaction.response.is_done() \
         else interaction.response.send_message
     # user with missing permissions tried to use command
     if isinstance(error, discord.app_commands.MissingPermissions):
