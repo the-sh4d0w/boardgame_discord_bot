@@ -4,6 +4,7 @@ import pathlib
 import zoneinfo
 
 import pydantic
+import pydantic_extra_types
 
 
 class Reaction(pydantic.BaseModel):
@@ -27,3 +28,4 @@ class Config(pydantic.BaseModel):
     games: list[str]
     reactions: list[Reaction]
     game_night_active: bool
+    role_colours: list[pydantic_extra_types.Color]

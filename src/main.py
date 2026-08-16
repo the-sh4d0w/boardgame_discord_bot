@@ -306,6 +306,14 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
     """
     utils.log_command(interaction)
     await interaction.response.defer()
+    # create roles
+    for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
+        if interaction.guild \
+                and not any(role.name == role_name for role in interaction.guild.roles):
+            await interaction.guild.create_role(
+                name=role_name, mentionable=True,
+                reason="Weekday role for Boardgame Bot (manually through command).",
+                colour=discord.Colour.from_str(role_colour.as_hex("long")))
     # poll setup
     today: datetime.date = datetime.date.today()
     duration: datetime.timedelta
@@ -356,6 +364,30 @@ async def create_event(interaction: discord.Interaction, date: str) -> None:
     except ValueError:
         await interaction.response.send_message(utils.translate("event_error", locale),
                                                 ephemeral=True)
+
+
+@tree.command(name="roles", description="roles_desc")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions()
+async def create_roles(interaction: discord.Interaction) -> None:
+    """Create roles for weekdays.
+
+    Arguments:
+        - interaction: the interaction being handled.
+    """
+    utils.log_command(interaction)
+    locale: str = interaction.locale.value
+    role_amount: int = 0
+    for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
+        if interaction.guild \
+                and not any(role.name == role_name for role in interaction.guild.roles):
+            await interaction.guild.create_role(
+                name=role_name, mentionable=True,
+                reason="Weekday role for Boardgame Bot (manually through command).",
+                colour=discord.Colour.from_str(role_colour.as_hex("long")))
+            role_amount += 1
+    await interaction.response.send_message(utils.translate("roles_created", locale,
+                                            role_amount=role_amount), ephemeral=True)
 
 
 @tree.command(name="msg", description="msg_desc")

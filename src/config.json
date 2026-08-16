@@ -80,5 +80,14 @@
             "fallback_emoji": "🇱"
         }
     ],
-    "game_night_active": false
+    "game_night_active": false,
+    "role_colours": [
+        "#055DF2",
+        "#01B101",
+        "#FDD433",
+        "#FE8D0D",
+        "#D42714",
+        "#B832FE",
+        "#EB2DA2"
+    ]
 }
