@@ -170,8 +170,8 @@ def next_sunday_1800(date: datetime.date) -> datetime.datetime:
     Returns:
         Next sunday 18:00.
     """
-    return datetime.datetime.combine(date + datetime.timedelta(days=6 - date.weekday()),
-                                     datetime.time(18, 0))
+    return datetime.datetime.combine(date + datetime.timedelta(
+        days=7 if date.weekday() == 6 else 6 - date.weekday()), datetime.time(18, 0))
 
 
 def next_monday(date: datetime.date) -> datetime.date:

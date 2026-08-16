@@ -193,6 +193,54 @@ async def on_scheduled_event_update(before: discord.ScheduledEvent, after: disco
             CONFIG.game_night_active = False
 
 
+@bot.event
+async def on_raw_poll_vote_add(payload: discord.RawPollVoteActionEvent) \
+        -> None:
+    """Do stuff on raw poll vote add.
+
+    Arguments:
+        - payload: raw event payload data.
+    """
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
+    if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
+        if (user := guild.get_member(payload.user_id)) \
+            and (channel := guild.get_channel(payload.channel_id)) \
+                and channel.type == discord.ChannelType.text\
+                and (message := await channel.fetch_message(payload.message_id)) \
+                and message.poll and (answer := [answer for answer in message.poll.answers
+                                                 if answer.id == payload.answer_id][0]):
+            if answer.poll.message and answer.poll.message.author.id == bot_id \
+                    and answer.poll.message.guild:
+                day: str = answer.text.split(",")[0]
+                for role in answer.poll.message.guild.roles:
+                    if role.name == day:
+                        await user.add_roles(role, reason="Voted in Boardgame Bot poll.")
+
+
+@bot.event
+async def on_raw_poll_vote_remove(payload: discord.RawPollVoteActionEvent) \
+        -> None:
+    """Do stuff on raw poll vote remove.
+
+    Arguments:
+        - payload: raw event payload data.
+    """
+    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
+    if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
+        if (user := guild.get_member(payload.user_id)) \
+            and (channel := guild.get_channel(payload.channel_id)) \
+                and channel.type == discord.ChannelType.text\
+                and (message := await channel.fetch_message(payload.message_id)) \
+                and message.poll and (answer := [answer for answer in message.poll.answers
+                                                 if answer.id == payload.answer_id][0]):
+            if answer.poll.message and answer.poll.message.author.id == bot_id \
+                    and answer.poll.message.guild:
+                day: str = answer.text.split(",")[0]
+                for role in answer.poll.message.guild.roles:
+                    if role.name == day:
+                        await user.remove_roles(role, reason="Voted in Boardgame Bot poll.")
+
+
 # tasks
 @discord.ext.tasks.loop(minutes=15)
 async def activity_task() -> None:
@@ -309,7 +357,7 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
     """
     utils.log_command(interaction)
     await interaction.response.defer()
-    # create roles
+    # create roles and remove users if already member of role
     for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
         if interaction.guild \
                 and not any(role.name == role_name for role in interaction.guild.roles):
@@ -317,6 +365,13 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
                 name=role_name, mentionable=True,
                 reason="Weekday role for Boardgame Bot (manually through command).",
                 colour=discord.Colour.from_str(role_colour.as_hex("long")))
+    if interaction.guild:
+        for role_name in CONFIG.day_names:
+            for role in interaction.guild.roles:
+                if role.name == role_name:
+                    for member in role.members:
+                        if role in member.roles:
+                            await member.remove_roles(role, reason="Role reset by Boardgame Bot.")
     # poll setup
     today: datetime.date = datetime.date.today()
     duration: datetime.timedelta
