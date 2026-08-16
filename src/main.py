@@ -126,7 +126,8 @@ async def on_ready() -> None:
     # called multiple times; not only when first started
     text: str = f"Bot running version {__VERSION__ + (" (dev)" if dev else "")}."
     if bot.application:
-        await bot.application.edit(description=f"v{__VERSION__ + (" (dev)" if dev else "")}")
+        dev_text: str = " (dev)\nWarning: Bot may be unstable. Use at own risk."
+        await bot.application.edit(description=f"v{__VERSION__ + (dev_text if dev else "")}")
     logging.info(text)
 
 
@@ -197,7 +198,9 @@ async def on_scheduled_event_update(before: discord.ScheduledEvent, after: disco
 async def activity_task() -> None:
     """Update activity."""
     activity: discord.BaseActivity
-    if CONFIG.game_night_active:
+    if dev:
+        activity = discord.Game(name="In active development")
+    elif CONFIG.game_night_active:
         activity = discord.Game(name="Spieleabend")
     else:
         random.seed(datetime.datetime.now().isoformat())
