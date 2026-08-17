@@ -21,7 +21,7 @@ import ui
 import utils
 
 # TODO: analysis and statistics command
-# TODO: a bit of general cleanup and order
+# TODO: a bit of general cleanup and order -> split into multiple files
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
