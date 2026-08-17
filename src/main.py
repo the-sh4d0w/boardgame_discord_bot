@@ -21,9 +21,7 @@ import ui
 import utils
 
 # TODO: analysis and statistics command
-# TODO: improve config validation -> what specifically?
 # TODO: a bit of general cleanup and order
-# TODO: improve command descriptions
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(

@@ -11,14 +11,14 @@ class Reaction(pydantic.BaseModel):
     """Reaction model."""
     phrase: str
     guild_emojis: list[str]
-    fallback_emoji: str
+    fallback_emoji: str  # sadly can't match emoji, it seems
 
 
 class Config(pydantic.BaseModel):
     """Config model."""
-    fallback_lang: str
+    fallback_lang: str = pydantic.Field(pattern=r"^[a-z]{2}(-[A-Z]{2}){0,1}$")
     timezone: zoneinfo.ZoneInfo
-    holiday_api_url: str
+    holiday_api_url: pydantic.HttpUrl
     question_text: str
     day_names: list[str]
     event_title: str
