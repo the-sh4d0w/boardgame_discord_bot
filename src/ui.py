@@ -32,7 +32,8 @@ class ResponseModal(discord.ui.Modal):
             - interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
-        text: str = typing.cast(discord.ui.TextInput, self.children[0]).value
+        text: str = typing.cast(
+            discord.ui.TextInput[ResponseModal], self.children[0]).value
         await self.message.reply(text)
         await interaction.response.send_message(utils.translate("respond_submit", locale,
                                                                 text=text), ephemeral=True)
@@ -75,7 +76,8 @@ class MessageModal(discord.ui.Modal):
             - interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
-        text: str = typing.cast(discord.ui.TextInput, self.children[0]).value
+        text: str = typing.cast(
+            discord.ui.TextInput[MessageModal], self.children[0]).value
         await self.channel.send(text)
         await interaction.response.send_message(utils.translate("msg_submit", locale,
                                                                 text=text), ephemeral=True)
@@ -120,8 +122,10 @@ class QuoteModal(discord.ui.Modal):
             - interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
-        text: str = typing.cast(discord.ui.TextInput, self.children[0]).value
-        source: str = typing.cast(discord.ui.TextInput, self.children[1]).value
+        text: str = typing.cast(
+            discord.ui.TextInput[MessageModal], self.children[0]).value
+        source: str = typing.cast(
+            discord.ui.TextInput[MessageModal], self.children[1]).value
         embed: discord.Embed = discord.Embed(colour=discord.Colour.from_str("#044389"),
                                              title="Zitat", description=f'"{text}"\n~{source}')
         embed.set_author(name=interaction.user.name,
