@@ -379,7 +379,7 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
     kw: int = (datetime.datetime.now() +
                datetime.timedelta(days=7)).isocalendar().week
     monday: datetime.date = utils.next_monday(today)
-    holidays: dict[str, str] = utils.get_holidays(CONFIG.holiday_api_url)
+    holidays: dict[str, str] = utils.get_holidays(str(CONFIG.holiday_api_url))
     # create actual poll
     poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format_map({"kw": kw}),
                                       duration=duration, multiple=True)
