@@ -16,7 +16,6 @@ import requests
 import models
 
 
-LANG_PATH: str = "path"
 COMMAND: int = 21
 REACTION: int = 22
 ACTIVITY: int = 23
@@ -52,7 +51,7 @@ class DiscordHandler(logging.Handler):
         """Initialise the handler.
 
         Arguments:
-            - log_queue: the queue to send logs to.
+            log_queue: the queue to send logs to.
         """
         super().__init__()
         self.log_queue: queue.Queue[discord.Embed] = log_queue
@@ -61,7 +60,7 @@ class DiscordHandler(logging.Handler):
         """Log the record by adding it to the queue.
 
         Arguments:
-            - record: the record to log.
+            record: the record to log.
         """
         embed: discord.Embed
         match record.levelno:
@@ -102,9 +101,9 @@ class BoardgameTranslator(discord.app_commands.Translator):
         """Translate the string to the given locale.
 
         Arguments:
-            - string: the translation key.
-            - locale: the discord locale to translate to.
-            - context: additional translation context.
+            string: the translation key.
+            locale: the discord locale to translate to.
+            context: additional translation context.
 
         Returns:
             Translated string if locale exists, None otherwise.
@@ -116,7 +115,7 @@ def log_command(interaction: discord.Interaction) -> None:
     """Log the use of a command.
 
     Arguments:
-        - interaction: interaction related to use of command.
+        interaction: interaction related to use of command.
     """
     if interaction.command and interaction.data:
         cmd_mention: str = f"</{interaction.command.name}:{interaction.data.get("id")}>"
@@ -128,8 +127,8 @@ def log_reaction(message: discord.Message, reaction: models.Reaction) -> None:
     """Log the reaction.
 
     Arguments:
-        - message: the message being reacted to.
-        - reaction: the reaction.
+        message: the message being reacted to.
+        reaction: the reaction.
     """
     logging.log(stacklevel=2, level=REACTION, msg=f"Message by {message.author.mention} in "
                 f"<#{message.channel.id}> contained phrase '{reaction.phrase}'. The following "
@@ -140,7 +139,7 @@ def log_activity(activity: discord.BaseActivity) -> None:
     """Log the change of activity.
 
     Arguments:
-        - activity: the new activity.
+        activity: the new activity.
     """
     logging.log(stacklevel=2, level=ACTIVITY,
                 msg=f"Changed activity to {activity}.")
@@ -150,7 +149,7 @@ def get_holidays(url: str) -> dict[str, str]:
     """Get all holidays for Bavaria.
 
     Arguments:
-        - url: the url of the holiday api.
+        url: the url of the holiday api.
 
     Returns:
         Holidays with date and name.
@@ -167,7 +166,7 @@ def next_sunday_1800(date: datetime.date) -> datetime.datetime:
     """Get next sunday 18:00 as datetime.datetime object.
 
     Arguments:
-        - date: date to start from (default today).
+        date: date to start from (default today).
 
     Returns:
         Next sunday 18:00.
@@ -180,7 +179,7 @@ def next_monday(date: datetime.date) -> datetime.date:
     """Get next monday as datetime.date object.
 
     Arguments:
-        - date: date to start from (default today).
+        date: date to start from (default today).
 
     Returns:
         Next monday.
@@ -192,7 +191,7 @@ def format_date_iso_tz(dt: datetime.datetime) -> str:
     """Formate datetime.datetime as ISO 8601 without spaces as UTC with timezone letter.
 
     Arguments:
-        - dt: datetime to format.
+        dt: datetime to format.
 
     Returns:
         Formatted datetime.
@@ -201,15 +200,15 @@ def format_date_iso_tz(dt: datetime.datetime) -> str:
 
 
 def create_ics(kw: str, start: datetime.datetime, end: datetime.datetime) -> str:
-    """Create .ics file.
+    """Create .ics file for upcoming boardgame meet.
 
     Arguments:
-        - kw: calendar week.
-        - start: start date and time.
-        - end: end date and time.
+        kw: calendar week.
+        start: start date and time.
+        end: end date and time.
 
     Returns:
-        The content of the .ics file.
+        The content for the .ics file.
     """
     environment: jinja2.Environment = jinja2.Environment(loader=jinja2.FileSystemLoader(
         ".", encoding="utf-8"), keep_trailing_newline=True)
@@ -221,12 +220,19 @@ def create_ics(kw: str, start: datetime.datetime, end: datetime.datetime) -> str
 
 
 def check_if_owner(owner_id: int):
-    """Check if the user is the bot owner."""
+    """Check if the user is the bot owner.
+
+    Arguments:
+        owner_id: ID of the owner to check against.
+
+    Returns:
+        A decorator.
+    """
     def predicate(interaction: discord.Interaction) -> bool:
         """Predicate to check if the user is the bot owner.
 
         Arguments:
-            - interaction: the interaction being handled.
+            interaction: the interaction being handled.
 
         Returns:
             True if owner, False otherwise.
@@ -252,9 +258,9 @@ def translate(key: str, locale: str, **format_kwargs: typing.Any) -> str:
     """Get text for key in given locale and optionally format with values.
 
     Arguments:
-        - key: the translation key.
-        - locale: the locale to translate to.
-        - format_kwargs: the keyword arguments for formatting.
+        key: the translation key.
+        locale: the locale to translate to.
+        format_kwargs: the keyword arguments for formatting.
 
     Returns:
         The translated and formatted text.

@@ -14,9 +14,9 @@ class ResponseModal(discord.ui.Modal):
         """Initialise the modal.
 
         Arguments:
-            - locale: the locale to translate to.
-            - owner: the user id of the owner.
-            - message: message to respond to.
+            locale: the locale to translate to.
+            owner: the user id of the owner.
+            message: message to respond to.
         """
         super().__init__(title=utils.translate("respond_title", locale))
         self.owner: int = owner
@@ -29,7 +29,7 @@ class ResponseModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
+            interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
         text: str = typing.cast(
@@ -43,8 +43,8 @@ class ResponseModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
-            - error: the error that occurred.
+            interaction: the interaction being handled.
+            error: the error that occurred.
         """
         locale: str = interaction.locale.value
         await interaction.response.send_message(utils.translate("error", locale, error=error,
@@ -58,9 +58,9 @@ class MessageModal(discord.ui.Modal):
         """Initialise the modal.
 
         Arguments:
-            - locale: the locale to translate to.
-            - owner: the user id of the owner.
-            - channel: the channel to message.
+            locale: the locale to translate to.
+            owner: the user id of the owner.
+            channel: the channel to message.
         """
         super().__init__(title=utils.translate("msg_title", locale))
         self.owner: int = owner
@@ -73,7 +73,7 @@ class MessageModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
+            interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
         text: str = typing.cast(
@@ -87,8 +87,8 @@ class MessageModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
-            - error: the error that occurred.
+            interaction: the interaction being handled.
+            error: the error that occurred.
         """
         locale: str = interaction.locale.value
         await interaction.response.send_message(utils.translate("error", locale, error=error,
@@ -102,9 +102,9 @@ class QuoteModal(discord.ui.Modal):
         """Initialise the modal.
 
         Arguments:
-            - locale: the locale to translate to.
-            - owner: the user id of the owner.
-            - channel: the channel to send the quote to.
+            locale: the locale to translate to.
+            owner: the user id of the owner.
+            channel: the channel to send the quote to.
         """
         super().__init__(title=utils.translate("quote_title", locale))
         self.owner: int = owner
@@ -119,7 +119,7 @@ class QuoteModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
+            interaction: the interaction being handled.
         """
         locale: str = interaction.locale.value
         text: str = typing.cast(
@@ -139,8 +139,8 @@ class QuoteModal(discord.ui.Modal):
         """Do stuff on submit.
 
         Arguments:
-            - interaction: the interaction being handled.
-            - error: the error that occurred.
+            interaction: the interaction being handled.
+            error: the error that occurred.
         """
         locale: str = interaction.locale.value
         await interaction.response.send_message(utils.translate("error", locale, error=error,

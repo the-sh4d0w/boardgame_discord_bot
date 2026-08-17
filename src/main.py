@@ -54,9 +54,9 @@ bot: discord.Client = discord.Client(intents=intents)
 tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
     client=bot,
     allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False))
+dev: bool = False
 
 # logging setup
-dev: bool = False
 log_queue: queue.Queue[discord.Embed] = queue.Queue()
 logger: logging.Logger = logging.getLogger("discord")
 discord_handler: utils.DiscordHandler = utils.DiscordHandler(log_queue)
@@ -75,8 +75,8 @@ async def on_error(interaction: discord.Interaction,
     """Do stuff on error.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - error: the error being raised.
+        interaction: the interaction being handled.
+        error: the error being raised.
     """
     locale: str = interaction.locale.value
     send = interaction.followup.send if interaction.response.is_done() \
@@ -132,7 +132,7 @@ async def on_message(message: discord.Message) -> None:
     """Do stuff on message received.
 
     Argumemts:
-        - message: the actual message.
+        message: the actual message.
     """
     reaction: models.Reaction
     message_text: str = message.content.lower()
@@ -180,8 +180,8 @@ async def on_scheduled_event_update(before: discord.ScheduledEvent, after: disco
     """Do stuff on scheduled event update.
 
     Arguments:
-        - before: scheduled event before update.
-        - after: scheduled event after update.
+        before: scheduled event before update.
+        after: scheduled event after update.
     """
     bot_id: int = typing.cast(discord.ClientUser, bot.user).id
     if after.guild and after.creator and after.creator.id == bot_id:
@@ -199,7 +199,7 @@ async def on_raw_poll_vote_add(payload: discord.RawPollVoteActionEvent) \
     """Do stuff on raw poll vote add.
 
     Arguments:
-        - payload: raw event payload data.
+        payload: raw event payload data.
     """
     bot_id: int = typing.cast(discord.ClientUser, bot.user).id
     if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
@@ -223,7 +223,7 @@ async def on_raw_poll_vote_remove(payload: discord.RawPollVoteActionEvent) \
     """Do stuff on raw poll vote remove.
 
     Arguments:
-        - payload: raw event payload data.
+        payload: raw event payload data.
     """
     bot_id: int = typing.cast(discord.ClientUser, bot.user).id
     if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
@@ -276,7 +276,7 @@ async def sync(interaction: discord.Interaction) -> None:
     """Sync commands.
 
     Arguments:
-        - interaction: the interaction being handled.
+        interaction: the interaction being handled.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -299,10 +299,10 @@ async def ascend(interaction: discord.Interaction, server_id: str, role_id: str,
     """Ascend.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - server_id: the ID of the server.
-        - role_id: the ID of the role.
-        - user_id: the ID of the user.
+        interaction: the interaction being handled.
+        server_id: the ID of the server.
+        role_id: the ID of the role.
+        user_id: the ID of the user.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -326,10 +326,10 @@ async def descend(interaction: discord.Interaction, server_id: str, role_id: str
     """Descend.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - server_id: the ID of the server.
-        - role_id: the ID of the role.
-        - user_id: the ID of the user.
+        interaction: the interaction being handled.
+        server_id: the ID of the server.
+        role_id: the ID of the role.
+        user_id: the ID of the user.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -351,21 +351,20 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
     """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - hours: poll duration in hours.
-        - weekend: include the weekend as options if True.
+        interaction: the interaction being handled.
+        hours: poll duration in hours.
+        weekend: include the weekend as options if True.
     """
     utils.log_command(interaction)
     await interaction.response.defer()
     # create roles and remove users if already member of role
-    for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
-        if interaction.guild \
-                and not any(role.name == role_name for role in interaction.guild.roles):
-            await interaction.guild.create_role(
-                name=role_name, mentionable=True,
-                reason="Weekday role for Boardgame Bot (manually through command).",
-                colour=discord.Colour.from_str(role_colour.as_hex("long")))
     if interaction.guild:
+        for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
+            if not any(role.name == role_name for role in interaction.guild.roles):
+                await interaction.guild.create_role(
+                    name=role_name, mentionable=True,
+                    reason="Weekday role for Boardgame Bot (manually through command).",
+                    colour=discord.Colour.from_str(role_colour.as_hex("long")))
         for role_name in CONFIG.day_names:
             for role in interaction.guild.roles:
                 if role.name == role_name:
@@ -401,7 +400,12 @@ async def create_poll(interaction: discord.Interaction, hours: typing.Optional[i
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
 async def create_event(interaction: discord.Interaction, date: str) -> None:
-    """Create a scheduled event."""
+    """Create a scheduled event.
+
+    Arguments:
+        interaction: the interaction being handled.
+        date: the date for the event.
+    """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
     try:
@@ -435,7 +439,7 @@ async def create_roles(interaction: discord.Interaction) -> None:
     """Create roles for weekdays.
 
     Arguments:
-        - interaction: the interaction being handled.
+        interaction: the interaction being handled.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -459,7 +463,7 @@ async def send_message(interaction: discord.Interaction) -> None:
     """Send a message.
 
     Arguments:
-        - interaction: the interaction being handled.
+        interaction: the interaction being handled.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -474,7 +478,7 @@ async def quote(interaction: discord.Interaction) -> None:
     """Send formatted quote.
 
     Arguments:
-        - interaction: the interaction being handled.
+        interaction: the interaction being handled.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -493,9 +497,9 @@ async def ban(interaction: discord.Interaction, member: discord.Member,
     from the language files.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - member: member which will be banned.
-        - reason: reason why the member was banned.
+        interaction: the interaction being handled.
+        member: member which will be banned.
+        reason: reason why the member was banned.
     """
     utils.log_command(interaction)
     await member.ban(delete_message_days=0, reason=reason)
@@ -515,9 +519,9 @@ async def unban(interaction: discord.Interaction, user_id: str,
     loaded from the language files.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - user_id: ID of the user which will be unbanned.
-        - reason: reason why the user was unbanned.
+        interaction: the interaction being handled.
+        user_id: ID of the user which will be unbanned.
+        reason: reason why the user was unbanned.
     """
     utils.log_command(interaction)
     # always True as command is guild-only
@@ -541,9 +545,9 @@ async def kick(interaction: discord.Interaction, member: discord.Member,
     from the language files.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - member: member which will be kicked.
-        - reason: reason why the member was kicked.
+        interaction: the interaction being handled.
+        member: member which will be kicked.
+        reason: reason why the member was kicked.
     """
     utils.log_command(interaction)
     await member.kick(reason=reason)
@@ -561,8 +565,8 @@ async def react(interaction: discord.Interaction, message: discord.Message) -> N
     """React to message.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - message: the message that the context menu command was executed on.
+        interaction: the interaction being handled.
+        message: the message that the context menu command was executed on.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -586,8 +590,8 @@ async def respond(interaction: discord.Interaction, message: discord.Message) ->
     """Respond to message.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - message: the message that the context menu command was executed on.
+        interaction: the interaction being handled.
+        message: the message that the context menu command was executed on.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -601,8 +605,8 @@ async def close_poll(interaction: discord.Interaction, message: discord.Message)
     """Close a bot poll.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - message: the message that the context menu command was executed on.
+        interaction: the interaction being handled.
+        message: the message that the context menu command was executed on.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -631,8 +635,8 @@ async def delete_msg(interaction: discord.Interaction, message: discord.Message)
     """Delete a bot message.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - message: the message that the context menu command was executed on.
+        interaction: the interaction being handled.
+        message: the message that the context menu command was executed on.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
@@ -654,8 +658,8 @@ async def modview(interaction: discord.Interaction, member: discord.Member) -> N
     """Get modview info.
 
     Arguments:
-        - interaction: the interaction being handled.
-        - member: the member that the context menu command was executed on.
+        interaction: the interaction being handled.
+        member: the member that the context menu command was executed on.
     """
     utils.log_command(interaction)
     locale: str = interaction.locale.value
