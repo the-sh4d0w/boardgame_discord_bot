@@ -1,3 +1,6 @@
+![Python versions](https://img.shields.io/badge/Python-3.14-blue)
+![Tool version](https://img.shields.io/badge/Version-4.3.6-green)
+
 # Boardgame Bot
 
 A discord bot for a board game meetup. Its main functionality is the `/poll` command, which
@@ -12,6 +15,11 @@ the days of the week (and possible holidays) as poll options.
 ### Slash Commands
 - `/message`: Send a message as the bot.
 - `/quote`: Send a nicely formatted quote.
+- `/event`: Create a scheduled event for a specific day (in the case it wasn't created
+automatically).
+- `/ban`: Ban a user.
+- `/unban`: Unban a user.
+- `/kick`: Kick a user.
 
 ### Message Commands
 - `/react`: React to a message as the bot. Copies the reaction(s) of the user who used the command.
@@ -27,16 +35,15 @@ on the mobile app.
 ## Other features
 
 ### Reactions
-Reactions will automatically be added if certain phrases are found in a message. These phrases and
-reactions are specified in `config.json`.
+A reaction will automatically be added if a certain phrase is found in a message. These phrases
+and reactions are specified in `config.json`.
 
 ### Activity
 The bot will randomly choose a board game from `config.json` every 30 minutes and set it as its
 game activity.
 
 ### Logging
-The bot logs to the console, a log file, and a discord channel (specified in the
-`.env` file).
+The bot logs to the console, a log file, and a discord channel (specified in the `.env` file).
 
 ![Screenshot of the logs channel.](images/boardgame_bot_logs.png)
 
@@ -45,8 +52,8 @@ The bot logs to the console, a log file, and a discord channel (specified in the
 
 This bot is built for a very specific purpose and has features you will not need. If you are—for
 whatever reason—considering using this bot on your on server, I would strongly advise against it.
-This is whole instruction only exists so I can reference it in the future when I have forgotten how
-any of this works. Still, feel free to be inspired by my code or use it as reference.
+This is whole instruction only exists so I can reference it in the future when I have forgotten
+how any of this works. Still, feel free to be inspired by my code or use it as reference.
 
 The bot assumes it has administrator permissions. I know this is not ideal, but I didn't want to
 have to worry about having the correct permissions.
@@ -69,3 +76,5 @@ LOG_CHANNEL=A DISCORD CHANNEL ID HERE
 ```
 
 Then just run: `docker compose up`
+
+Or even easier: `make up`

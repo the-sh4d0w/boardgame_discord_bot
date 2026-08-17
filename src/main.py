@@ -22,6 +22,7 @@ import utils
 
 # TODO: analysis and statistics command
 # TODO: a bit of general cleanup and order -> split into multiple files
+# TODO: weekday roles per week/poll
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
