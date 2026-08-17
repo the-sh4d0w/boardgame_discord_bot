@@ -7,8 +7,10 @@ import logging
 import pathlib
 import queue
 import typing
+import uuid
 
 import discord
+import jinja2
 import requests
 
 import models
@@ -96,7 +98,7 @@ class BoardgameTranslator(discord.app_commands.Translator):
     """Boardgame translator."""
 
     async def translate(self, string: discord.app_commands.locale_str, locale: discord.Locale,
-                        context) -> str | None: # type: ignore
+                        context) -> str | None:  # type: ignore
         """Translate the string to the given locale.
 
         Arguments:
@@ -184,6 +186,38 @@ def next_monday(date: datetime.date) -> datetime.date:
         Next monday.
     """
     return date + datetime.timedelta(days=7 - date.weekday())
+
+
+def format_date_iso_tz(dt: datetime.datetime) -> str:
+    """Formate datetime.datetime as ISO 8601 without spaces as UTC with timezone letter.
+
+    Arguments:
+        - dt: datetime to format.
+
+    Returns:
+        Formatted datetime.
+    """
+    return dt.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S") + "Z"
+
+
+def create_ics(kw: str, start: datetime.datetime, end: datetime.datetime) -> str:
+    """Create .ics file.
+
+    Arguments:
+        - kw: calendar week.
+        - start: start date and time.
+        - end: end date and time.
+
+    Returns:
+        The content of the .ics file.
+    """
+    environment: jinja2.Environment = jinja2.Environment(loader=jinja2.FileSystemLoader(
+        ".", encoding="utf-8"), keep_trailing_newline=True)
+    now: datetime.datetime = datetime.datetime.now()
+    cal_uuid: uuid.UUID = uuid.uuid1()
+    return environment.get_template("ics.j2").render(
+        kw=kw, cal_uuid=cal_uuid, now=format_date_iso_tz(now), start=format_date_iso_tz(start),
+        end=format_date_iso_tz(end))
 
 
 def check_if_owner(owner_id: int):

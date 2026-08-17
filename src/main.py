@@ -1,6 +1,7 @@
 """Boardgame discord bot."""
 
 import datetime
+import io
 import logging
 import os
 import pathlib
@@ -167,6 +168,10 @@ async def on_message(message: discord.Message) -> None:
                     privacy_level=discord.PrivacyLevel.guild_only)
                 await message.channel.send("Ergebnis der Umfrage war "
                                            f"<t:{int(start_time.timestamp())}:D>.\n{event.url}")
+                await message.channel.send(file=discord.File(
+                    fp=io.StringIO(utils.create_ics(
+                        kw=kw, start=start_time, end=end_time)),  # type: ignore
+                    filename="Spieleabend.ics"))
 
 
 @bot.event
@@ -414,6 +419,10 @@ async def create_event(interaction: discord.Interaction, date: str) -> None:
                 privacy_level=discord.PrivacyLevel.guild_only)
             await interaction.response.send_message(f"Event für <t:{int(start_time.timestamp())}:D>"
                                                     f" wurde erstellt.\n{event.url}")
+            await interaction.response.send_message(file=discord.File(
+                fp=io.StringIO(utils.create_ics(
+                    kw=kw, start=start_time, end=end_time)),  # type: ignore
+                filename="Spieleabend.ics"))
     except ValueError:
         await interaction.response.send_message(utils.translate("event_error", locale),
                                                 ephemeral=True)

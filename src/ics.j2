@@ -1,0 +1,19 @@
+BEGIN:VCALENDAR
+PRODID:Boardgame Bot
+VERSION:2.0
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTAMP:{{now}}
+UID:BOARDGAME-BOT-CALENDAR-EVENT-{{cal_uuid}}
+DESCRIPTION:Unser Spieleband\, der wöchentlich im MI stattfindet. Der Wochentag wird in einer demokratischen Abstimmung entschieden.\n\nBrettspiele gerne auch selbst mitbringen.
+LOCATION:Boltzmannstraße 3\, 85748 Garching bei München\, Deutschland
+SUMMARY:Spieleabend ({{kw}})
+DTSTART:{{start}}
+DTEND:{{end}}
+BEGIN:VALARM
+TRIGGER:-PT60M
+ACTION:DISPLAY
+DESCRIPTION:Alarm
+END:VALARM
+END:VEVENT
+END:VCALENDAR
