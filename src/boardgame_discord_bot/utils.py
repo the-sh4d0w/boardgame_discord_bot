@@ -13,7 +13,7 @@ import discord
 import jinja2
 import requests
 
-import models
+from boardgame_discord_bot import models
 
 
 COMMAND: int = 21

@@ -4,7 +4,7 @@ import typing
 
 import discord
 
-import utils
+from boardgame_discord_bot import utils
 
 
 class ResponseModal(discord.ui.Modal):

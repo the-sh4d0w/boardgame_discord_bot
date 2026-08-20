@@ -1,9 +1,9 @@
 """Boardgame discord bot."""
 
+import asyncio
 import datetime
 import io
 import logging
-import os
 import pathlib
 import queue
 import random
@@ -13,16 +13,22 @@ import typing
 
 import discord
 import discord.app_commands
+import discord.ext.commands  # pyright: ignore[reportMissingTypeStubs]
 import discord.ext.tasks  # pyright: ignore[reportMissingTypeStubs]
-import dotenv
 
-import models
-import ui
-import utils
+# I hate this; Docker and relative imports are horrible, but at least it works now
+from boardgame_discord_bot import TOKEN, OWNER, LOG_CHANNEL, CONFIG, LOG_FILE
+from boardgame_discord_bot import models
+from boardgame_discord_bot import ui
+from boardgame_discord_bot import utils
+from boardgame_discord_bot.cogs import administration
+from boardgame_discord_bot.cogs import democracy
+from boardgame_discord_bot.cogs import event
+from boardgame_discord_bot.cogs import moderation
 
 # TODO: analysis and statistics command
-# TODO: a bit of general cleanup and order -> split into multiple files
 # TODO: weekday roles per week/poll
+# TODO: make bot description look nicer
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
@@ -30,30 +36,22 @@ pyproject_toml: dict[str, typing.Any] = tomllib.loads(
 __VERSION__: str = pyproject_toml["project"]["version"]
 """Bot version as Major.Minor.Patch (semantic versioning)."""
 
-# load environment variables
-dotenv.load_dotenv()
-TOKEN: str = typing.cast(str, os.environ.get("DISCORD_BOT_TOKEN"))
-OWNER: int = int(typing.cast(str, os.environ.get("OWNER_ID")))
-LOG_CHANNEL: int = int(typing.cast(str, os.environ.get("LOG_CHANNEL")))
-
-# config values
-CONFIG_PATH: str = "config.json"
-CONFIG: models.Config = models.Config.model_validate_json(
-    pathlib.Path(CONFIG_PATH).read_text(encoding="utf-8"))
-LOG_PATH: str = "logs"
-LOG_FILE: pathlib.Path = pathlib.Path(
-    "/", LOG_PATH, f"log_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log")
-
 
 # bot setup
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-bot: discord.Client = discord.Client(intents=intents)
-tree: discord.app_commands.CommandTree = discord.app_commands.CommandTree(
-    client=bot,
+bot: discord.ext.commands.Bot = discord.ext.commands.Bot(
+    command_prefix="!!!", intents=intents,
     allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False))
+tree: discord.app_commands.CommandTree = bot.tree
 dev: bool = False
+
+# add cogs
+asyncio.run(bot.add_cog(administration.AdministrationCog(bot=bot)))
+asyncio.run(bot.add_cog(democracy.DemocracyCog(bot=bot)))
+asyncio.run(bot.add_cog(event.EventCog(bot=bot)))
+asyncio.run(bot.add_cog(moderation.ModerationCog(bot=bot)))
 
 # logging setup
 log_queue: queue.Queue[discord.Embed] = queue.Queue()
@@ -173,73 +171,6 @@ async def on_message(message: discord.Message) -> None:
                     filename="Spieleabend.ics"))
 
 
-@bot.event
-async def on_scheduled_event_update(before: discord.ScheduledEvent, after: discord.ScheduledEvent) \
-        -> None:
-    """Do stuff on scheduled event update.
-
-    Arguments:
-        before: scheduled event before update.
-        after: scheduled event after update.
-    """
-    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
-    if after.guild and after.creator and after.creator.id == bot_id:
-        if before.status == discord.EventStatus.scheduled \
-                and after.status == discord.EventStatus.active:
-            CONFIG.game_night_active = True
-        elif before.status == discord.EventStatus.active \
-                and after.status == discord.EventStatus.completed:
-            CONFIG.game_night_active = False
-
-
-@bot.event
-async def on_raw_poll_vote_add(payload: discord.RawPollVoteActionEvent) \
-        -> None:
-    """Do stuff on raw poll vote add.
-
-    Arguments:
-        payload: raw event payload data.
-    """
-    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
-    if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
-        if (user := guild.get_member(payload.user_id)) \
-            and (channel := guild.get_channel(payload.channel_id)) \
-                and channel.type == discord.ChannelType.text\
-                and (message := await channel.fetch_message(payload.message_id)) \
-                and message.poll and (answer := [answer for answer in message.poll.answers
-                                                 if answer.id == payload.answer_id][0]):
-            if answer.poll.message and answer.poll.message.author.id == bot_id \
-                    and answer.poll.message.guild:
-                day: str = answer.text.split(",")[0]
-                for role in answer.poll.message.guild.roles:
-                    if role.name == day:
-                        await user.add_roles(role, reason="Voted in Boardgame Bot poll.")
-
-
-@bot.event
-async def on_raw_poll_vote_remove(payload: discord.RawPollVoteActionEvent) \
-        -> None:
-    """Do stuff on raw poll vote remove.
-
-    Arguments:
-        payload: raw event payload data.
-    """
-    bot_id: int = typing.cast(discord.ClientUser, bot.user).id
-    if payload.guild_id and (guild := bot.get_guild(payload.guild_id)):
-        if (user := guild.get_member(payload.user_id)) \
-            and (channel := guild.get_channel(payload.channel_id)) \
-                and channel.type == discord.ChannelType.text\
-                and (message := await channel.fetch_message(payload.message_id)) \
-                and message.poll and (answer := [answer for answer in message.poll.answers
-                                                 if answer.id == payload.answer_id][0]):
-            if answer.poll.message and answer.poll.message.author.id == bot_id \
-                    and answer.poll.message.guild:
-                day: str = answer.text.split(",")[0]
-                for role in answer.poll.message.guild.roles:
-                    if role.name == day:
-                        await user.remove_roles(role, reason="Voted in Boardgame Bot poll.")
-
-
 # tasks
 @discord.ext.tasks.loop(minutes=15)
 async def activity_task() -> None:
@@ -267,194 +198,7 @@ async def log_task() -> None:
         await log_channel.send(embed=embed)
 
 
-# slash commands
-@tree.command(name="sync", description="sync_desc")
-@discord.app_commands.dm_only()
-@utils.check_if_owner(OWNER)
-async def sync(interaction: discord.Interaction) -> None:
-    """Sync commands.
-
-    Arguments:
-        interaction: the interaction being handled.
-    """
-    utils.log_command(interaction)
-    locale: str = interaction.locale.value
-    await interaction.response.defer(ephemeral=True)
-    synced: list[discord.app_commands.AppCommand] = await tree.sync()
-    commands: str = ", ".join(map(lambda cmd: utils.translate(cmd.name, locale),
-                                  synced))
-    text: str = utils.translate("sync_text", locale, amount=len(synced),
-                                synced=commands)
-    await interaction.followup.send(content=text, ephemeral=True)
-
-
-@tree.command(name="ascend", description="ascend_desc")
-@discord.app_commands.describe(server_id="ascend_server-id", role_id="ascend_role-id",
-                               user_id="ascend_user-id")
-@discord.app_commands.dm_only()
-@utils.check_if_owner(OWNER)
-async def ascend(interaction: discord.Interaction, server_id: str, role_id: str,
-                 user_id: str = str(OWNER)) -> None:
-    """Ascend.
-
-    Arguments:
-        interaction: the interaction being handled.
-        server_id: the ID of the server.
-        role_id: the ID of the role.
-        user_id: the ID of the user.
-    """
-    utils.log_command(interaction)
-    locale: str = interaction.locale.value
-    if (guild := bot.get_guild(int(server_id))) and (role := guild.get_role(int(role_id))) \
-            and (member := guild.get_member(int(user_id))):
-        await member.add_roles(role)
-        await interaction.response.send_message(utils.translate(
-            "ascend_success", locale, role=role.mention, member=member.mention), ephemeral=True)
-    else:
-        await interaction.response.send_message(utils.translate("ascend_fail", locale),
-                                                ephemeral=True)
-
-
-@tree.command(name="descend", description="descend_desc")
-@discord.app_commands.describe(server_id="descend_server-id", role_id="descend_role-id",
-                               user_id="descend_user-id")
-@discord.app_commands.dm_only()
-@utils.check_if_owner(OWNER)
-async def descend(interaction: discord.Interaction, server_id: str, role_id: str,
-                  user_id: str = str(OWNER)) -> None:
-    """Descend.
-
-    Arguments:
-        interaction: the interaction being handled.
-        server_id: the ID of the server.
-        role_id: the ID of the role.
-        user_id: the ID of the user.
-    """
-    utils.log_command(interaction)
-    locale: str = interaction.locale.value
-    if (guild := bot.get_guild(int(server_id))) and (role := guild.get_role(int(role_id))) \
-            and (member := guild.get_member(int(user_id))):
-        await member.remove_roles(role)
-        await interaction.response.send_message(utils.translate(
-            "descend_success", locale, role=role.mention, member=member.mention), ephemeral=True)
-    else:
-        await interaction.response.send_message(utils.translate("descend_fail", locale),
-                                                ephemeral=True)
-
-
-@tree.command(name="poll", description="poll_desc")
-@discord.app_commands.describe(hours="poll_hours", weekend="poll_weekend")
-@discord.app_commands.guild_only()
-async def create_poll(interaction: discord.Interaction, hours: typing.Optional[int] = None,
-                      weekend: typing.Optional[bool] = False) -> None:
-    """Create poll. Note: this is german-only. Text is NOT loaded from the language files.
-
-    Arguments:
-        interaction: the interaction being handled.
-        hours: poll duration in hours.
-        weekend: include the weekend as options if True.
-    """
-    utils.log_command(interaction)
-    await interaction.response.defer()
-    # create roles and remove users if already member of role
-    if interaction.guild:
-        for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
-            if not any(role.name == role_name for role in interaction.guild.roles):
-                await interaction.guild.create_role(
-                    name=role_name, mentionable=True,
-                    reason="Weekday role for Boardgame Bot (manually through command).",
-                    colour=discord.Colour.from_str(role_colour.as_hex("long")))
-        for role_name in CONFIG.day_names:
-            for role in interaction.guild.roles:
-                if role.name == role_name:
-                    for member in role.members:
-                        if role in member.roles:
-                            await member.remove_roles(role, reason="Role reset by Boardgame Bot.")
-    # poll setup
-    today: datetime.date = datetime.date.today()
-    duration: datetime.timedelta
-    if hours and 0 < hours <= 768:
-        duration = datetime.timedelta(hours=hours)
-    else:
-        duration = utils.next_sunday_1800(today) - datetime.datetime.now()
-    kw: int = (datetime.datetime.now() +
-               datetime.timedelta(days=7)).isocalendar().week
-    monday: datetime.date = utils.next_monday(today)
-    holidays: dict[str, str] = utils.get_holidays(str(CONFIG.holiday_api_url))
-    # create actual poll
-    poll: discord.Poll = discord.Poll(question=CONFIG.question_text.format_map({"kw": kw}),
-                                      duration=duration, multiple=True)
-    # it works...
-    for i in range(7 - (not weekend) * 2):
-        date: datetime.date = monday + datetime.timedelta(i)
-        poll_text: str = f"{CONFIG.day_names[i]}, {date.strftime("%d.%m.%Y")}"
-        if date.isoformat() in holidays:
-            poll_text += f" ({holidays[date.isoformat()]})"
-        poll.add_answer(text=poll_text)
-    await interaction.followup.send(poll=poll)
-
-
-@tree.command(name="event", description="event_desc")
-@discord.app_commands.describe(date="event_date")
-@discord.app_commands.guild_only()
-@discord.app_commands.default_permissions()
-async def create_event(interaction: discord.Interaction, date: str) -> None:
-    """Create a scheduled event.
-
-    Arguments:
-        interaction: the interaction being handled.
-        date: the date for the event.
-    """
-    utils.log_command(interaction)
-    locale: str = interaction.locale.value
-    try:
-        start_time: datetime.datetime = datetime.datetime.fromisoformat(date).astimezone(
-            CONFIG.timezone).replace(hour=16, minute=0)
-        end_time: datetime.datetime = start_time.replace(hour=22)
-        kw: int = start_time.isocalendar().week
-        if interaction.guild:
-            event: discord.ScheduledEvent = await interaction.guild.create_scheduled_event(
-                name=CONFIG.event_title.format_map({"kw": f"KW {kw}"}),
-                location=CONFIG.event_location, description=CONFIG.event_description,
-                image=CONFIG.event_cover_image.read_bytes(),
-                start_time=start_time, end_time=end_time,
-                entity_type=discord.EntityType.external,
-                privacy_level=discord.PrivacyLevel.guild_only)
-            await interaction.response.send_message(f"Event für <t:{int(start_time.timestamp())}:D>"
-                                                    f" wurde erstellt.\n{event.url}")
-            await interaction.response.send_message(file=discord.File(
-                fp=io.StringIO(utils.create_ics(
-                    kw=kw, start=start_time, end=end_time)),  # type: ignore
-                filename="Spieleabend.ics"))
-    except ValueError:
-        await interaction.response.send_message(utils.translate("event_error", locale),
-                                                ephemeral=True)
-
-
-@tree.command(name="roles", description="roles_desc")
-@discord.app_commands.guild_only()
-@discord.app_commands.default_permissions()
-async def create_roles(interaction: discord.Interaction) -> None:
-    """Create roles for weekdays.
-
-    Arguments:
-        interaction: the interaction being handled.
-    """
-    utils.log_command(interaction)
-    locale: str = interaction.locale.value
-    role_amount: int = 0
-    for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
-        if interaction.guild \
-                and not any(role.name == role_name for role in interaction.guild.roles):
-            await interaction.guild.create_role(
-                name=role_name, mentionable=True,
-                reason="Weekday role for Boardgame Bot (manually through command).",
-                colour=discord.Colour.from_str(role_colour.as_hex("long")))
-            role_amount += 1
-    await interaction.response.send_message(utils.translate("roles_created", locale,
-                                            role_amount=role_amount), ephemeral=True)
-
-
+# slash commands; not worth moving
 @tree.command(name="msg", description="msg_desc")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
@@ -486,77 +230,7 @@ async def quote(interaction: discord.Interaction) -> None:
     await interaction.response.send_modal(ui.QuoteModal(locale, OWNER, channel))
 
 
-@tree.command(name="ban", description="ban_desc")
-@discord.app_commands.describe(member="ban_member", reason="ban_reason")
-@discord.app_commands.guild_only()
-@discord.app_commands.default_permissions()
-async def ban(interaction: discord.Interaction, member: discord.Member,
-              reason: typing.Optional[str] = None) -> None:
-    """Ban a member and give an (optional) reason. Note: this is german-only. Text is NOT loaded
-    from the language files.
-
-    Arguments:
-        interaction: the interaction being handled.
-        member: member which will be banned.
-        reason: reason why the member was banned.
-    """
-    utils.log_command(interaction)
-    await member.ban(delete_message_days=0, reason=reason)
-    embed: discord.Embed = discord.Embed(colour=discord.Colour.green(),
-                                         title=f":white_check_mark: {member.name} wurde gebannt",
-                                         description=reason, timestamp=datetime.datetime.now())
-    await interaction.response.send_message(embed=embed)
-
-
-@tree.command(name="unban", description="unban_desc")
-@discord.app_commands.describe(user_id="unban_user-id", reason="unban_reason")
-@discord.app_commands.guild_only()
-@discord.app_commands.default_permissions()
-async def unban(interaction: discord.Interaction, user_id: str,
-                reason: typing.Optional[str] = None) -> None:
-    """Unban a banned user and give an (optional) reason. Note: this is german-only. Text is NOT
-    loaded from the language files.
-
-    Arguments:
-        interaction: the interaction being handled.
-        user_id: ID of the user which will be unbanned.
-        reason: reason why the user was unbanned.
-    """
-    utils.log_command(interaction)
-    # always True as command is guild-only
-    if interaction.guild and (user := bot.get_user(int(user_id))):
-        await interaction.guild.unban(user=user, reason=reason)
-        embed: discord.Embed = discord.Embed(colour=discord.Colour.green(),
-                                             title=f":white_check_mark: {user.name} wurde entbannt",
-                                             description=reason, timestamp=datetime.datetime.now())
-        await interaction.response.send_message(embed=embed)
-    else:
-        await interaction.response.send_message(":x: Nutzer mit dieser ID existiert nicht.")
-
-
-@tree.command(name="kick", description="kick_desc")
-@discord.app_commands.describe(member="kick_member", reason="kick_reason")
-@discord.app_commands.guild_only()
-@discord.app_commands.default_permissions()
-async def kick(interaction: discord.Interaction, member: discord.Member,
-               reason: typing.Optional[str] = None) -> None:
-    """Kick a member and give an (optional) reason. Note: this is german-only. Text is NOT loaded
-    from the language files.
-
-    Arguments:
-        interaction: the interaction being handled.
-        member: member which will be kicked.
-        reason: reason why the member was kicked.
-    """
-    utils.log_command(interaction)
-    await member.kick(reason=reason)
-    embed: discord.Embed = discord.Embed(colour=discord.Colour.green(),
-                                         title=f":white_check_mark: {member.name} wurde gekickt",
-                                         description=reason, timestamp=datetime.datetime.now())
-    await interaction.response.send_message(embed=embed)
-
-
-# message commands
+# message commands; context_menu can't seem to be properly used ina  Cog
 @tree.context_menu(name="react")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
@@ -649,7 +323,7 @@ async def delete_msg(interaction: discord.Interaction, message: discord.Message)
                                                                 bot=bot_id), ephemeral=True)
 
 
-# user commands
+# user commands; context_menu can't seem to be properly used ina  Cog
 @tree.context_menu(name="modview")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions()
