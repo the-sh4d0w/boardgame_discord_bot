@@ -23,7 +23,7 @@ from boardgame_discord_bot import ui
 from boardgame_discord_bot import utils
 from boardgame_discord_bot.cogs import administration
 from boardgame_discord_bot.cogs import democracy
-from boardgame_discord_bot.cogs import event
+from boardgame_discord_bot.cogs import event as event_cog
 from boardgame_discord_bot.cogs import moderation
 
 # TODO: analysis and statistics command
@@ -50,7 +50,7 @@ dev: bool = False
 # add cogs
 asyncio.run(bot.add_cog(administration.AdministrationCog(bot=bot)))
 asyncio.run(bot.add_cog(democracy.DemocracyCog(bot=bot)))
-asyncio.run(bot.add_cog(event.EventCog(bot=bot)))
+asyncio.run(bot.add_cog(event_cog.EventCog(bot=bot)))
 asyncio.run(bot.add_cog(moderation.ModerationCog(bot=bot)))
 
 # logging setup
@@ -196,6 +196,19 @@ async def log_task() -> None:
     while not log_queue.empty():
         embed: discord.Embed = log_queue.get()
         await log_channel.send(embed=embed)
+
+
+@discord.ext.tasks.loop(time=datetime.time(hour=20))
+async def role_task() -> None:
+    """Reset weekday roles."""
+    if datetime.date.today().weekday() == 6:
+        kw: int = datetime.datetime.now().isocalendar().week
+        for guild in bot.guilds:
+            for role_name in CONFIG.day_names:
+                role_name = f"{role_name} (KW{kw:02})"
+                for role in guild.roles:
+                    if role.name == role_name:
+                        await role.delete(reason="Role reset by Boardgame Bot.")
 
 
 # slash commands; not worth moving

@@ -31,6 +31,8 @@ class DemocracyCog(discord.ext.commands.Cog):
         Arguments:
             payload: raw event payload data.
         """
+        kw: int = (datetime.datetime.now() +
+                   datetime.timedelta(days=7)).isocalendar().week
         bot_id: int = typing.cast(discord.ClientUser, self.bot.user).id
         if payload.guild_id and (guild := self.bot.get_guild(payload.guild_id)):
             if (user := guild.get_member(payload.user_id)) \
@@ -42,8 +44,9 @@ class DemocracyCog(discord.ext.commands.Cog):
                 if answer.poll.message and answer.poll.message.author.id == bot_id \
                         and answer.poll.message.guild:
                     day: str = answer.text.split(",")[0]
+                    role_name: str = f"{day} (KW{kw:02})"
                     for role in answer.poll.message.guild.roles:
-                        if role.name == day:
+                        if role.name == role_name:
                             await user.add_roles(role, reason="Voted in Boardgame Bot poll.")
 
     @discord.ext.commands.Cog.listener()
@@ -54,6 +57,8 @@ class DemocracyCog(discord.ext.commands.Cog):
         Arguments:
             payload: raw event payload data.
         """
+        kw: int = (datetime.datetime.now() +
+                   datetime.timedelta(days=7)).isocalendar().week
         bot_id: int = typing.cast(discord.ClientUser, self.bot.user).id
         if payload.guild_id and (guild := self.bot.get_guild(payload.guild_id)):
             if (user := guild.get_member(payload.user_id)) \
@@ -65,8 +70,9 @@ class DemocracyCog(discord.ext.commands.Cog):
                 if answer.poll.message and answer.poll.message.author.id == bot_id \
                         and answer.poll.message.guild:
                     day: str = answer.text.split(",")[0]
+                    role_name: str = f"{day} (KW{kw:02})"
                     for role in answer.poll.message.guild.roles:
-                        if role.name == day:
+                        if role.name == role_name:
                             await user.remove_roles(role, reason="Voted in Boardgame Bot poll.")
 
     # slash commands
@@ -85,21 +91,17 @@ class DemocracyCog(discord.ext.commands.Cog):
         """
         utils.log_command(interaction)
         await interaction.response.defer()
+        kw: int = (datetime.datetime.now() +
+                   datetime.timedelta(days=7)).isocalendar().week
         # create roles and remove users if already member of role
         if interaction.guild:
             for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
+                role_name = f"{role_name} (KW{kw:02})"
                 if not any(role.name == role_name for role in interaction.guild.roles):
                     await interaction.guild.create_role(
                         name=role_name, mentionable=True,
-                        reason="Weekday role for Boardgame Bot (manually through command).",
+                        reason="Weekday role for Boardgame Bot (automatically through poll).",
                         colour=discord.Colour.from_str(role_colour.as_hex("long")))
-            for role_name in CONFIG.day_names:
-                for role in interaction.guild.roles:
-                    if role.name == role_name:
-                        for member in role.members:
-                            if role in member.roles:
-                                await member.remove_roles(
-                                    role, reason="Role reset by Boardgame Bot.")
         # poll setup
         today: datetime.date = datetime.date.today()
         duration: datetime.timedelta
@@ -107,8 +109,6 @@ class DemocracyCog(discord.ext.commands.Cog):
             duration = datetime.timedelta(hours=hours)
         else:
             duration = utils.next_sunday_1800(today) - datetime.datetime.now()
-        kw: int = (datetime.datetime.now() +
-                   datetime.timedelta(days=7)).isocalendar().week
         monday: datetime.date = utils.next_monday(today)
         holidays: dict[str, str] = utils.get_holidays(
             str(CONFIG.holiday_api_url))
@@ -125,9 +125,11 @@ class DemocracyCog(discord.ext.commands.Cog):
         await interaction.followup.send(poll=poll)
 
     @discord.app_commands.command(name="roles", description="roles_desc")
+    @discord.app_commands.describe(kw="roles_week")
     @discord.app_commands.guild_only()
     @discord.app_commands.default_permissions()
-    async def create_roles(self, interaction: discord.Interaction) -> None:
+    async def create_roles(self, interaction: discord.Interaction, kw: typing.Optional[int]
+                           = datetime.datetime.now().isocalendar().week,) -> None:
         """Create roles for weekdays.
 
         Arguments:
@@ -137,6 +139,7 @@ class DemocracyCog(discord.ext.commands.Cog):
         locale: str = interaction.locale.value
         role_amount: int = 0
         for role_name, role_colour in zip(CONFIG.day_names, CONFIG.role_colours):
+            role_name = f"{role_name} (KW{kw:02})"
             if interaction.guild \
                     and not any(role.name == role_name for role in interaction.guild.roles):
                 await interaction.guild.create_role(

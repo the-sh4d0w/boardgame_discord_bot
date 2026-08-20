@@ -26,6 +26,7 @@
     "event_error": "Date format is incorrect.",
     "roles": "roles",
     "roles_desc": "Create roles for weekdays.",
+    "roles_week": "Calendar week to create roles for.",
     "roles_created": "Created {role_amount} roles.",
     "react": "react",
     "react_success": "The following reactions were added: {reactions}",

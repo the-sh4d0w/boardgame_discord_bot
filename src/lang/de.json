@@ -26,6 +26,7 @@
     "event_error": "Datumsformat ist falsch.",
     "roles": "rollen",
     "roles_desc": "Erstelle Rollen für Wochentage.",
+    "roles_week": "Kalenderwoche für die Rollen erstellt werden sollen.",
     "roles_created": "{role_amount} Rollen wurden erstellt.",
     "react": "reagieren",
     "react_success": "Folgende Reaktionen hinzugefügt: {reactions}",
