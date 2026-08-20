@@ -28,7 +28,6 @@ from boardgame_discord_bot.cogs import moderation
 
 # TODO: analysis and statistics command
 # TODO: weekday roles per week/poll
-# TODO: make bot description look nicer
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
@@ -119,7 +118,7 @@ async def on_ready() -> None:
     # called multiple times; not only when first started
     text: str = f"Bot running version {__VERSION__ + (" (dev)" if dev else "")}."
     if bot.application:
-        dev_text: str = " (dev)\nWarning: Bot may be unstable. Use at own risk."
+        dev_text: str = " (dev)\n:warning: Bot may be unstable. Use at your own risk."
         await bot.application.edit(description=f"v{__VERSION__ + (dev_text if dev else "")}")
     logging.info(text)
 
