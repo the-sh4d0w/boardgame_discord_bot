@@ -28,6 +28,8 @@ from boardgame_discord_bot.cogs import moderation
 
 # TODO: analysis and statistics command
 # TODO: weekday roles per week/poll
+# TODO: log tasks, etc. (basically all bot actions)
+# TODO: some more info on tasks -> maybe a status command?; or channel?
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(
@@ -115,6 +117,8 @@ async def on_ready() -> None:
         activity_task.start()
     if not log_task.is_running():
         log_task.start()
+    if not role_task.is_running():
+        role_task.start()
     # called multiple times; not only when first started
     text: str = f"Bot running version {__VERSION__ + (" (dev)" if dev else "")}."
     if bot.application:
@@ -197,7 +201,7 @@ async def log_task() -> None:
         await log_channel.send(embed=embed)
 
 
-@discord.ext.tasks.loop(time=datetime.time(hour=20))
+@discord.ext.tasks.loop(time=datetime.time(hour=22))
 async def role_task() -> None:
     """Reset weekday roles."""
     if datetime.date.today().weekday() == 6:

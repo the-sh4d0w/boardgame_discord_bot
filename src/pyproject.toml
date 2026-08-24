@@ -1,6 +1,6 @@
 [project]
 name = "boardgame-discord-bot"
-version = "5.1.1"
+version = "5.1.2"
 description = "Boardgame discord bot."
 readme = "README.md"
 requires-python = ">=3.14"
