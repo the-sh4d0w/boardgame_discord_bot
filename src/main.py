@@ -27,9 +27,10 @@ from boardgame_discord_bot.cogs import event as event_cog
 from boardgame_discord_bot.cogs import moderation
 
 # TODO: analysis and statistics command
-# TODO: weekday roles per week/poll
 # TODO: log tasks, etc. (basically all bot actions)
-# TODO: some more info on tasks -> maybe a status command?; or channel?
+# TODO: some more info on tasks, etc. -> stats/info every ~30 minutes in a specified channel
+# TODO: move everything variable into the config and remove hard-coded stuff
+# TODO: reorganise a bit more
 
 
 pyproject_toml: dict[str, typing.Any] = tomllib.loads(

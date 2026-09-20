@@ -61,7 +61,7 @@ class EventCog(discord.ext.commands.Cog):
                 CONFIG.timezone).replace(hour=16, minute=0)
             end_time: datetime.datetime = start_time.replace(hour=22)
             kw: int = start_time.isocalendar().week
-            if interaction.guild:
+            if interaction.guild and isinstance(interaction.channel, discord.TextChannel):
                 event: discord.ScheduledEvent = await interaction.guild.create_scheduled_event(
                     name=CONFIG.event_title.format_map({"kw": f"KW {kw}"}),
                     location=CONFIG.event_location, description=CONFIG.event_description,
@@ -71,7 +71,7 @@ class EventCog(discord.ext.commands.Cog):
                     privacy_level=discord.PrivacyLevel.guild_only)
                 await interaction.response.send_message(
                     f"Event für <t:{int(start_time.timestamp())}:D> wurde erstellt.\n{event.url}")
-                await interaction.response.send_message(file=discord.File(
+                await interaction.channel.send(file=discord.File(
                     fp=io.StringIO(utils.create_ics(
                         kw=kw, start=start_time, end=end_time)),  # type: ignore
                     filename="Spieleabend.ics"))
