@@ -1,5 +1,5 @@
 ![Python versions](https://img.shields.io/badge/Python-3.14-blue)
-![Bot version](https://img.shields.io/badge/Version-5.1.4-green)
+![Bot version](https://img.shields.io/badge/Version-5.1.5-green)
 
 # Boardgame Bot
 
